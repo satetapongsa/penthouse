@@ -4,6 +4,8 @@ import React, { useCallback, useEffect } from 'react';
 import * as THREE from 'three';
 import { Canvas } from '@react-three/fiber';
 import { Physics } from '@react-three/rapier';
+import { PerformanceMonitor } from '@react-three/drei';
+import { Perf } from 'r3f-perf';
 import { PenthouseShell } from '@/components/room/PenthouseShell';
 import { Player } from '@/components/player/Player';
 import { InteractionManager } from '@/components/interaction/InteractionManager';
@@ -22,6 +24,8 @@ export const PenthouseCanvas: React.FC<PenthouseCanvasProps> = ({ canvasContaine
   const isMobile = useGameStore((s) => s.isMobile);
   const resumeGame = useGameStore((s) => s.resumeGame);
   const quality = useGameStore((s) => s.quality);
+  const setQuality = useGameStore((s) => s.setQuality);
+  const showPerf = useGameStore((s) => s.showPerf);
   const screenshotTrigger = useGameStore((s) => s.screenshotTrigger);
 
   useEffect(() => {
@@ -62,15 +66,15 @@ export const PenthouseCanvas: React.FC<PenthouseCanvasProps> = ({ canvasContaine
     }
   }, [isMobile, isStarted, isPaused, resumeGame]);
 
-  const maxDeviceDpr = typeof window !== 'undefined' ? window.devicePixelRatio : 1.5;
-  const dprRange: [number, number] =
+  // Capped DPR strictly per quality tier (Low 0.75, Medium 1, High 1.25, Ultra 1.5, never above 1.5)
+  const targetDpr =
     quality === 'low'
-      ? [1, 1]
+      ? 0.75
       : quality === 'medium'
-      ? [1, Math.min(1.25, maxDeviceDpr)]
+      ? 1.0
       : quality === 'high'
-      ? [1, Math.min(1.5, maxDeviceDpr)]
-      : [1, Math.min(2.0, maxDeviceDpr)];
+      ? 1.25
+      : 1.5;
 
   return (
     <div
@@ -93,9 +97,24 @@ export const PenthouseCanvas: React.FC<PenthouseCanvasProps> = ({ canvasContaine
           toneMappingExposure: 1.05,
           preserveDrawingBuffer: true,
         }}
-        dpr={dprRange}
+        dpr={targetDpr}
       >
         <color attach="background" args={['#EEF5F9']} />
+
+        {/* Adaptive Performance Monitor: Fast downgrade when FPS dips below threshold */}
+        <PerformanceMonitor
+          iterations={2}
+          threshold={0.72}
+          onDecline={() => {
+            const current = useGameStore.getState().quality;
+            if (current === 'ultra') setQuality('high');
+            else if (current === 'high') setQuality('medium');
+            else if (current === 'medium') setQuality('low');
+          }}
+        />
+
+        {/* Temporary Performance Diagnostics Overlay (Toggle with F3 or O) */}
+        {showPerf && <Perf position="top-left" deepAnalyze />}
 
         {/* Rapier Physics World */}
         <Physics gravity={[0, -9.81, 0]}>

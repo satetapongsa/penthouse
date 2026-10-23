@@ -262,6 +262,20 @@ export const ARCHITECTURE_CONFIG = {
     },
   ] as DoorConfig[],
 
+  // Room Adjacency Graph for Occlusion Culling & Dynamic Lighting
+  roomAdjacency: {
+    living: ['kitchen_dining', 'terrace', 'hallway', 'foyer'],
+    kitchen_dining: ['living', 'terrace'],
+    terrace: ['living', 'kitchen_dining'],
+    hallway: ['living', 'foyer', 'master_bedroom', 'powder_room'],
+    master_bedroom: ['hallway', 'wardrobe'],
+    wardrobe: ['master_bedroom', 'master_bathroom'],
+    master_bathroom: ['wardrobe'],
+    powder_room: ['hallway', 'foyer'],
+    foyer: ['hallway', 'living', 'guest_bedroom'],
+    guest_bedroom: ['foyer'],
+  } as Record<string, string[]>,
+
   // Jacuzzi / Pool Basin Dimensions on the Sky Terrace
   jacuzzi: {
     bounds: { minX: 8.5, maxX: 13.0, minZ: -11.5, maxZ: -7.5 },

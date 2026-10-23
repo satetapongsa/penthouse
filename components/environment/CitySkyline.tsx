@@ -201,7 +201,6 @@ export const CitySkyline: React.FC = () => {
         ref={buildingsMeshRef}
         args={[undefined, undefined, buildingCount]}
         receiveShadow
-        castShadow={quality === 'high' || quality === 'ultra'}
       >
         <boxGeometry args={[1, 1, 1]} />
         <meshStandardMaterial

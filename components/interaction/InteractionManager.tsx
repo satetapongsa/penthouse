@@ -18,8 +18,22 @@ export const InteractionManager: React.FC = () => {
   const setActiveInteractable = useGameStore((s) => s.setActiveInteractable);
   const activeInteractable = useGameStore((s) => s.activeInteractable);
 
-  // Debounce interaction key trigger
+  // Cached interactable objects list
+  const interactablesRef = useRef<THREE.Object3D[]>([]);
+  const lastScanTime = useRef(0);
+  const lastRaycastTime = useRef(0);
   const lastInteractTime = useRef(0);
+
+  // Helper to re-scan for interactable objects in the scene
+  const scanInteractables = () => {
+    const found: THREE.Object3D[] = [];
+    scene.traverse((obj) => {
+      if (obj.userData && obj.userData.interactable) {
+        found.push(obj);
+      }
+    });
+    interactablesRef.current = found;
+  };
 
   useFrame(() => {
     if (!isStarted || isPaused) {
@@ -27,44 +41,55 @@ export const InteractionManager: React.FC = () => {
       return;
     }
 
-    // Raycast from camera center into scene
-    raycaster.current.setFromCamera(screenCenter.current, camera);
-    raycaster.current.far = PLAYER_CONFIG.maxInteractDistance;
+    const now = performance.now();
 
-    const intersects = raycaster.current.intersectObjects(scene.children, true);
+    // 1. Periodically refresh interactables cache (every 1.5s)
+    if (now - lastScanTime.current > 1500 || interactablesRef.current.length === 0) {
+      lastScanTime.current = now;
+      scanInteractables();
+    }
 
-    let foundInteractable: InteractableAction | null = null;
+    // 2. Throttled Raycast at 18 Hz (every 55ms) ONLY against interactable objects
+    if (now - lastRaycastTime.current > 55) {
+      lastRaycastTime.current = now;
 
-    for (let i = 0; i < intersects.length; i++) {
-      const hit = intersects[i];
-      // Traverse up parent chain to find interactable marker
-      let obj: THREE.Object3D | null = hit.object;
-      while (obj && obj !== scene) {
-        if (obj.userData && obj.userData.interactable) {
-          foundInteractable = {
-            id: obj.userData.interactableId || obj.uuid,
-            label: obj.userData.label || 'Interact',
-            action: obj.userData.onInteract || (() => {}),
-          };
-          break;
+      raycaster.current.setFromCamera(screenCenter.current, camera);
+      raycaster.current.far = PLAYER_CONFIG.maxInteractDistance;
+
+      let foundInteractable: InteractableAction | null = null;
+
+      if (interactablesRef.current.length > 0) {
+        const intersects = raycaster.current.intersectObjects(interactablesRef.current, true);
+
+        for (let i = 0; i < intersects.length; i++) {
+          let obj: THREE.Object3D | null = intersects[i].object;
+          while (obj && obj !== scene) {
+            if (obj.userData && obj.userData.interactable) {
+              foundInteractable = {
+                id: obj.userData.interactableId || obj.uuid,
+                label: obj.userData.label || 'Interact',
+                action: obj.userData.onInteract || (() => {}),
+              };
+              break;
+            }
+            obj = obj.parent;
+          }
+          if (foundInteractable) break;
         }
-        obj = obj.parent;
       }
-      if (foundInteractable) break;
+
+      if (foundInteractable) {
+        if (!activeInteractable || activeInteractable.id !== foundInteractable.id || activeInteractable.label !== foundInteractable.label) {
+          setActiveInteractable(foundInteractable);
+        }
+      } else if (activeInteractable) {
+        setActiveInteractable(null);
+      }
     }
 
-    if (foundInteractable) {
-      if (!activeInteractable || activeInteractable.id !== foundInteractable.id || activeInteractable.label !== foundInteractable.label) {
-        setActiveInteractable(foundInteractable);
-      }
-    } else if (activeInteractable) {
-      setActiveInteractable(null);
-    }
-
-    // Check keyboard or mobile interact action
+    // 3. Trigger Interaction on Key / Tap
     if (controls.interact) {
-      const now = performance.now();
-      if (now - lastInteractTime.current > 350) {
+      if (now - lastInteractTime.current > 300) {
         lastInteractTime.current = now;
         if (activeInteractable) {
           activeInteractable.action();
@@ -77,12 +102,11 @@ export const InteractionManager: React.FC = () => {
   // Global listener for click or tap interaction when looking at an interactable
   useEffect(() => {
     const handlePointerDown = (e: MouseEvent) => {
-      // If pointer is locked and active interactable exists, left click can trigger interaction
       if (document.pointerLockElement && e.button === 0) {
         const current = useGameStore.getState().activeInteractable;
         if (current) {
           const now = performance.now();
-          if (now - lastInteractTime.current > 350) {
+          if (now - lastInteractTime.current > 300) {
             lastInteractTime.current = now;
             current.action();
           }

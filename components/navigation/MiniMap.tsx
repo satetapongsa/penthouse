@@ -6,6 +6,19 @@ import { useGameStore } from '@/store/useGameStore';
 import { ARCHITECTURE_CONFIG } from '@/lib/config';
 import { Map, ChevronDown, ChevronUp, Navigation } from 'lucide-react';
 
+const ROOM_SHORT_LABELS: Record<string, string> = {
+  living: 'LIVING',
+  kitchen_dining: 'KITCHEN',
+  terrace: 'TERRACE',
+  hallway: 'GALLERY',
+  master_bedroom: 'MASTER',
+  wardrobe: 'WALK-IN',
+  master_bathroom: 'BATH',
+  guest_bedroom: 'GUEST',
+  foyer: 'FOYER',
+  powder_room: 'POWDER',
+};
+
 export const MiniMap: React.FC = () => {
   const isStarted = useGameStore((s) => s.isStarted);
   const isPaused = useGameStore((s) => s.isPaused);
@@ -37,11 +50,6 @@ export const MiniMap: React.FC = () => {
 
   const playerSvgX = toSvgX(playerPosition.x);
   const playerSvgY = toSvgZ(playerPosition.z);
-
-  // In 3D: forward is -Z (yaw = 0).
-  // In SVG: down is +Y, up is -Y.
-  // When yaw = 0, facing -Z (North), which is up in SVG (-Y).
-  // Therefore, rotation angle around the player point is (yaw in degrees).
   const playerRotationDeg = (playerPosition.yaw * 180) / Math.PI;
 
   const rooms = Object.values(ARCHITECTURE_CONFIG.rooms);
@@ -50,28 +58,29 @@ export const MiniMap: React.FC = () => {
 
   return (
     <div className="fixed bottom-5 left-5 z-40 select-none">
-      <div className="rounded-2xl border border-[#C5A059]/40 bg-[#FFFDF9]/90 backdrop-blur-md shadow-xl overflow-hidden transition-all duration-300">
-        {/* Header Bar */}
+      <div className="rounded-2xl border border-[#C5A059]/40 bg-[#FFFDF9]/95 backdrop-blur-md shadow-xl overflow-hidden transition-all duration-300">
+        {/* Header Bar: Title and room name on separate lines to guarantee no overlap */}
         <div
           onClick={() => setIsExpanded(!isExpanded)}
-          className="flex items-center justify-between px-3.5 py-2 border-b border-[#E8DFD1] cursor-pointer hover:bg-[#F5EFE6]/50 transition-colors"
+          className="flex flex-col px-3.5 py-2 border-b border-[#E8DFD1] cursor-pointer hover:bg-[#F5EFE6]/50 transition-colors"
         >
-          <div className="flex items-center gap-2">
-            <Map className="w-3.5 h-3.5 text-[#8C7443]" />
-            <span className="text-[11px] font-medium tracking-[0.15em] text-[#4A453B] uppercase">
-              Floor Plan
-            </span>
-          </div>
-
-          <div className="flex items-center gap-1.5">
-            <span className="text-[10px] font-mono text-[#8C7443] truncate max-w-[110px]">
-              {activeRoom.name}
-            </span>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-1.5">
+              <Map className="w-3.5 h-3.5 text-[#8C7443]" />
+              <span className="text-[11px] font-medium tracking-[0.15em] text-[#4A453B] uppercase">
+                Floor Plan
+              </span>
+            </div>
             {isExpanded ? (
               <ChevronDown className="w-3.5 h-3.5 text-neutral-400" />
             ) : (
               <ChevronUp className="w-3.5 h-3.5 text-neutral-400" />
             )}
+          </div>
+
+          {/* Current Room Name on its own separate line */}
+          <div className="text-[10px] font-mono text-[#8C7443] tracking-wider uppercase mt-0.5 truncate max-w-[200px]">
+            {activeRoom.name}
           </div>
         </div>
 
@@ -91,15 +100,8 @@ export const MiniMap: React.FC = () => {
                 viewBox={`0 0 ${svgWidth} ${svgHeight}`}
                 className="w-full h-auto"
               >
-                {/* Background Grid Accent */}
-                <rect
-                  x="0"
-                  y="0"
-                  width={svgWidth}
-                  height={svgHeight}
-                  fill="#FAF8F3"
-                  rx="8"
-                />
+                {/* Background Accent */}
+                <rect x="0" y="0" width={svgWidth} height={svgHeight} fill="#FAF8F3" rx="8" />
 
                 {/* Rooms */}
                 {rooms.map((room) => {
@@ -109,6 +111,9 @@ export const MiniMap: React.FC = () => {
                   const rh = toSvgZ(room.bounds.maxZ) - ry;
                   const isActive = room.id === currentRoomId;
                   const isOutdoor = room.isOutdoor;
+                  const label = ROOM_SHORT_LABELS[room.id] || room.name.split(' ')[0];
+                  // Hide labels that do not comfortably fit to prevent overlapping or cut-off
+                  const canFitLabel = rw >= 30 && rh >= 22;
 
                   return (
                     <g
@@ -124,7 +129,7 @@ export const MiniMap: React.FC = () => {
                         rx="3"
                         fill={
                           isActive
-                            ? 'rgba(197, 160, 89, 0.32)'
+                            ? 'rgba(197, 160, 89, 0.35)'
                             : isOutdoor
                             ? 'rgba(236, 230, 218, 0.55)'
                             : 'rgba(255, 253, 249, 0.75)'
@@ -134,18 +139,20 @@ export const MiniMap: React.FC = () => {
                         className="transition-colors group-hover:fill-[#F3EFE6]"
                       />
 
-                      {/* Room Abbreviation / Label */}
-                      <text
-                        x={rx + rw / 2}
-                        y={ry + rh / 2 + 3}
-                        textAnchor="middle"
-                        fontSize={rw > 50 ? '7.5' : '6.5'}
-                        fill={isActive ? '#6B5424' : '#8A8275'}
-                        fontWeight={isActive ? '600' : '500'}
-                        className="pointer-events-none uppercase tracking-tighter"
-                      >
-                        {room.name.split(' ')[0]}
-                      </text>
+                      {/* Clean shortened non-overlapping label */}
+                      {canFitLabel && (
+                        <text
+                          x={rx + rw / 2}
+                          y={ry + rh / 2 + 2.5}
+                          textAnchor="middle"
+                          fontSize={rw > 50 ? '7.5' : '6.5'}
+                          fill={isActive ? '#6B5424' : '#8A8275'}
+                          fontWeight={isActive ? '600' : '500'}
+                          className="pointer-events-none uppercase tracking-tight"
+                        >
+                          {label}
+                        </text>
+                      )}
                     </g>
                   );
                 })}
@@ -172,15 +179,12 @@ export const MiniMap: React.FC = () => {
 
                 {/* Player Indicator & Vision Cone */}
                 <g transform={`translate(${playerSvgX}, ${playerSvgY}) rotate(${playerRotationDeg})`}>
-                  {/* Subtle Forward Vision Cone */}
                   <path
                     d="M 0 0 L -14 -24 L 14 -24 Z"
                     fill="url(#visionGradient)"
                     opacity="0.6"
                     className="pointer-events-none"
                   />
-
-                  {/* Pulsing Ripple */}
                   <circle
                     r="6.5"
                     fill="none"
@@ -189,23 +193,10 @@ export const MiniMap: React.FC = () => {
                     opacity="0.8"
                     className="animate-ping"
                   />
-
-                  {/* Player Dot */}
-                  <circle
-                    r="4"
-                    fill="#C5A059"
-                    stroke="#FFFFFF"
-                    strokeWidth="1.5"
-                  />
-
-                  {/* Direction Arrow Tip */}
-                  <polygon
-                    points="0,-7 -2.5,-3 2.5,-3"
-                    fill="#8C7443"
-                  />
+                  <circle r="4" fill="#C5A059" stroke="#FFFFFF" strokeWidth="1.5" />
+                  <polygon points="0,-7 -2.5,-3 2.5,-3" fill="#8C7443" />
                 </g>
 
-                {/* SVG Gradients */}
                 <defs>
                   <linearGradient id="visionGradient" x1="0%" y1="100%" x2="0%" y2="0%">
                     <stop offset="0%" stopColor="#D4AF37" stopOpacity="0.45" />
@@ -214,7 +205,6 @@ export const MiniMap: React.FC = () => {
                 </defs>
               </svg>
 
-              {/* Quick instructions */}
               <div className="mt-1 flex items-center justify-between text-[9px] text-[#8C8477]">
                 <span>Click room to teleport</span>
                 <span className="flex items-center gap-0.5">

@@ -23,7 +23,6 @@ export function useKeyboardControls() {
   const setControl = useGameStore((s) => s.setControl);
   const pauseGame = useGameStore((s) => s.pauseGame);
   const resumeGame = useGameStore((s) => s.resumeGame);
-  const toggleMute = useGameStore((s) => s.toggleMute);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -53,10 +52,26 @@ export function useKeyboardControls() {
         return;
       }
 
-      // 'M' key toggles mute
+      // 'M' key toggles audio mute
       if (e.code === 'KeyM') {
         e.preventDefault();
-        toggleMute();
+        const isMuted = useGameStore.getState().settings.isMuted;
+        useGameStore.getState().updateSettings({ isMuted: !isMuted });
+        return;
+      }
+
+      // 'F3' or 'O' key toggles performance diagnostics overlay
+      if (e.code === 'F3' || e.code === 'KeyO') {
+        e.preventDefault();
+        useGameStore.getState().togglePerf();
+        return;
+      }
+
+      // 'P' key toggles photo mode
+      if (e.code === 'KeyP') {
+        e.preventDefault();
+        const photo = useGameStore.getState().isPhotoMode;
+        useGameStore.getState().setPhotoMode(!photo);
         return;
       }
 
@@ -65,7 +80,6 @@ export function useKeyboardControls() {
 
       const controlKey = KEY_MAPPINGS[e.code];
       if (controlKey) {
-        // Prevent browser default scrolling for Space / Arrow keys
         if (['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code)) {
           e.preventDefault();
         }
@@ -81,7 +95,6 @@ export function useKeyboardControls() {
     };
 
     const handleBlur = () => {
-      // Release all controls when window loses focus
       Object.values(KEY_MAPPINGS).forEach((key) => {
         setControl(key, false);
       });
@@ -96,5 +109,5 @@ export function useKeyboardControls() {
       window.removeEventListener('keyup', handleKeyUp);
       window.removeEventListener('blur', handleBlur);
     };
-  }, [isStarted, isPaused, setControl, pauseGame, resumeGame, toggleMute]);
+  }, [isStarted, isPaused, setControl, pauseGame, resumeGame]);
 }

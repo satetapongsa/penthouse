@@ -1,176 +1,17 @@
 import { create } from 'zustand';
 import { audioEngine } from '@/lib/audio';
+import {
+  TimeOfDay,
+  GameStore,
+  INITIAL_CONTROLS,
+  INITIAL_SETTINGS,
+  INITIAL_DOOR_STATES,
+  INITIAL_WINDOW_STATES,
+  INITIAL_CURTAIN_STATES,
+  INITIAL_LIGHTING_STATES,
+} from './gameStoreTypes';
 
-export type GameState = 'intro' | 'loading' | 'playing' | 'paused';
-export type PlayerPosture = 'standing' | 'sitting' | 'lying';
-export type TimeOfDay = 'day' | 'sunset' | 'night';
-export type QualityPreset = 'low' | 'medium' | 'high' | 'ultra';
-
-export interface ControlState {
-  forward: boolean;
-  backward: boolean;
-  left: boolean;
-  right: boolean;
-  jump: boolean;
-  sprint: boolean;
-  crouch: boolean;
-  interact: boolean;
-}
-
-export interface SettingsState {
-  mouseSensitivity: number;
-  mobileSensitivity: number;
-  fov: number;
-  volume: number;
-  isMuted: boolean;
-  showFps: boolean;
-  headBobEnabled: boolean;
-  quality: QualityPreset;
-}
-
-export interface InteractableAction {
-  id: string;
-  label: string;
-  action: () => void;
-}
-
-export interface PostureTarget {
-  position: [number, number, number];
-  eyeHeight: number;
-  pitch: number;
-  yaw: number;
-  returnPosition: [number, number, number];
-  returnYaw: number;
-}
-
-interface GameStore {
-  // Game Status
-  gameState: GameState;
-  isStarted: boolean;
-  isPaused: boolean;
-  isMobile: boolean;
-  webGlSupported: boolean;
-
-  // Visual Atmosphere & Quality
-  timeOfDay: TimeOfDay;
-  quality: QualityPreset;
-  isPhotoMode: boolean;
-  screenshotTrigger: number;
-
-  // Active Control Inputs
-  controls: ControlState;
-  joystickVector: { x: number; y: number };
-  lookDelta: { x: number; y: number };
-
-  // Navigation & Room Awareness
-  currentRoomId: string;
-  playerPosition: { x: number; z: number; yaw: number };
-  isTeleporting: boolean;
-  teleportTarget: { position: [number, number, number]; yaw?: number } | null;
-
-  // Posture System (Sitting / Lying down)
-  posture: PlayerPosture;
-  postureTarget: PostureTarget | null;
-  enterSitting: (target: PostureTarget) => void;
-  exitSitting: () => void;
-  enterLying: (target: PostureTarget) => void;
-  exitLying: () => void;
-
-  // Central Interaction System
-  activeInteractable: InteractableAction | null;
-  doorStates: Record<string, boolean>; // doorId -> isOpen
-
-  // Architectural Appliances & Furniture Interactions
-  windowStates: Record<string, boolean>;
-  curtainStates: Record<string, boolean>;
-  lightingStates: Record<string, boolean>;
-  fireplaceOn: boolean;
-  tvOn: boolean;
-  cooktopOn: boolean;
-  fridgeOpen: boolean;
-  kitchenCabinetOpen: boolean;
-  faucetRunning: boolean;
-  showerRunning: boolean;
-  toiletLidOpen: boolean;
-  jacuzziJetsOn: boolean;
-  isNearJacuzzi: boolean;
-
-  // Configuration & Settings
-  settings: SettingsState;
-
-  // Actions
-  setGameState: (state: GameState) => void;
-  startGame: () => void;
-  pauseGame: () => void;
-  resumeGame: () => void;
-  exitToIntro: () => void;
-  setIsMobile: (isMobile: boolean) => void;
-  setWebGlSupported: (supported: boolean) => void;
-
-  // Atmosphere Actions
-  setTimeOfDay: (timeOfDay: TimeOfDay) => void;
-  cycleTimeOfDay: () => void;
-  setQuality: (quality: QualityPreset) => void;
-  setPhotoMode: (enabled: boolean) => void;
-  triggerScreenshot: () => void;
-
-  setControl: (key: keyof ControlState, active: boolean) => void;
-  setJoystickVector: (vector: { x: number; y: number }) => void;
-  addLookDelta: (delta: { x: number; y: number }) => void;
-  consumeLookDelta: () => { x: number; y: number };
-
-  setCurrentRoomId: (roomId: string) => void;
-  setPlayerPosition: (pos: { x: number; z: number; yaw: number }) => void;
-  triggerTeleport: (position: [number, number, number], yaw?: number) => void;
-  completeTeleport: () => void;
-
-  setActiveInteractable: (interactable: InteractableAction | null) => void;
-  toggleDoor: (doorId: string) => void;
-  setDoorState: (doorId: string, open: boolean) => void;
-
-  // Interactive toggles
-  toggleWindow: (windowId: string) => void;
-  toggleCurtains: (curtainId: string) => void;
-  toggleRoomLight: (roomId: string) => void;
-  setAllLights: (on: boolean) => void;
-  toggleFireplace: () => void;
-  toggleTv: () => void;
-  toggleCooktop: () => void;
-  toggleFridge: () => void;
-  toggleKitchenCabinet: () => void;
-  toggleFaucet: () => void;
-  toggleShower: () => void;
-  toggleToiletLid: () => void;
-  toggleJacuzziJets: () => void;
-  setIsNearJacuzzi: (near: boolean) => void;
-
-  // Audio Actions
-  setVolume: (volume: number) => void;
-  toggleMute: () => void;
-  updateSettings: (partial: Partial<SettingsState>) => void;
-}
-
-const initialControls: ControlState = {
-  forward: false,
-  backward: false,
-  left: false,
-  right: false,
-  jump: false,
-  sprint: false,
-  crouch: false,
-  interact: false,
-};
-
-const initialSettings: SettingsState = {
-  mouseSensitivity: 0.0022,
-  mobileSensitivity: 0.0035,
-  fov: 75,
-  volume: 0.7,
-  isMuted: false,
-  showFps: false,
-  headBobEnabled: true,
-  quality: 'medium',
-};
+export * from './gameStoreTypes';
 
 export const useGameStore = create<GameStore>((set, get) => ({
   gameState: 'intro',
@@ -183,8 +24,9 @@ export const useGameStore = create<GameStore>((set, get) => ({
   quality: 'medium',
   isPhotoMode: false,
   screenshotTrigger: 0,
+  showPerf: false,
 
-  controls: { ...initialControls },
+  controls: { ...INITIAL_CONTROLS },
   joystickVector: { x: 0, y: 0 },
   lookDelta: { x: 0, y: 0 },
 
@@ -197,37 +39,10 @@ export const useGameStore = create<GameStore>((set, get) => ({
   postureTarget: null,
 
   activeInteractable: null,
-  doorStates: {
-    'door-entrance': false,
-    'door-master-bed': false,
-    'door-master-bath': false,
-    'door-wardrobe': false,
-    'door-guest-bed': false,
-    'door-powder': false,
-    'door-terrace': false,
-  },
-
-  windowStates: {
-    living: false,
-    master_bedroom: false,
-    master_bathroom: false,
-  },
-  curtainStates: {
-    living: false,
-    master_bedroom: false,
-  },
-  lightingStates: {
-    living: true,
-    kitchen_dining: true,
-    terrace: true,
-    hallway: true,
-    master_bedroom: true,
-    wardrobe: true,
-    master_bathroom: true,
-    powder_room: true,
-    foyer: true,
-    guest_bedroom: true,
-  },
+  doorStates: { ...INITIAL_DOOR_STATES },
+  windowStates: { ...INITIAL_WINDOW_STATES },
+  curtainStates: { ...INITIAL_CURTAIN_STATES },
+  lightingStates: { ...INITIAL_LIGHTING_STATES },
   fireplaceOn: true,
   tvOn: false,
   cooktopOn: false,
@@ -239,48 +54,35 @@ export const useGameStore = create<GameStore>((set, get) => ({
   jacuzziJetsOn: false,
   isNearJacuzzi: false,
 
-  settings: { ...initialSettings },
+  settings: { ...INITIAL_SETTINGS },
 
-  setGameState: (gameState) => {
-    set({
-      gameState,
-      isStarted: gameState === 'playing' || gameState === 'paused',
-      isPaused: gameState === 'paused',
-    });
-  },
+  setGameState: (gameState) => set({ gameState }),
 
   startGame: () => {
     audioEngine.init();
     audioEngine.startAmbientMusic();
-    if (get().fireplaceOn) {
-      audioEngine.setFireplace(true);
-    }
-    set({
-      gameState: 'playing',
-      isStarted: true,
-      isPaused: false,
-    });
+    audioEngine.setFireplace(get().fireplaceOn);
+    set({ gameState: 'playing', isStarted: true, isPaused: false });
   },
 
   pauseGame: () => {
-    if (get().isStarted) {
-      set({
-        gameState: 'paused',
-        isPaused: true,
-        controls: { ...initialControls },
-        joystickVector: { x: 0, y: 0 },
-      });
-    }
+    set({
+      gameState: 'paused',
+      isPaused: true,
+      controls: { ...INITIAL_CONTROLS },
+      joystickVector: { x: 0, y: 0 },
+      lookDelta: { x: 0, y: 0 },
+    });
   },
 
   resumeGame: () => {
-    if (get().isStarted) {
-      audioEngine.init();
-      set({
-        gameState: 'playing',
-        isPaused: false,
-      });
-    }
+    set({
+      gameState: 'playing',
+      isPaused: false,
+      controls: { ...INITIAL_CONTROLS },
+      joystickVector: { x: 0, y: 0 },
+      lookDelta: { x: 0, y: 0 },
+    });
   },
 
   exitToIntro: () => {
@@ -289,73 +91,51 @@ export const useGameStore = create<GameStore>((set, get) => ({
     audioEngine.setFaucet(false);
     audioEngine.setShower(false);
     audioEngine.setFireplace(false);
-    audioEngine.setBreathing(false);
     audioEngine.setPoolNear(false);
-
+    audioEngine.setBreathing(false);
     set({
       gameState: 'intro',
       isStarted: false,
       isPaused: false,
       posture: 'standing',
       postureTarget: null,
-      isPhotoMode: false,
-      controls: { ...initialControls },
+      controls: { ...INITIAL_CONTROLS },
       joystickVector: { x: 0, y: 0 },
       lookDelta: { x: 0, y: 0 },
-      activeInteractable: null,
     });
   },
 
   setIsMobile: (isMobile) => set({ isMobile }),
   setWebGlSupported: (webGlSupported) => set({ webGlSupported }),
 
-  // Atmosphere & Time of Day
   setTimeOfDay: (timeOfDay) => {
-    audioEngine.playSwitch();
-    // Auto turn on interior lights at sunset or night
-    if (timeOfDay === 'sunset' || timeOfDay === 'night') {
-      get().setAllLights(true);
-      if (!get().fireplaceOn) get().toggleFireplace();
-    }
     set({ timeOfDay });
+    if (timeOfDay === 'night' || timeOfDay === 'sunset') {
+      const lights = { ...get().lightingStates };
+      Object.keys(lights).forEach((k) => { lights[k] = true; });
+      set({ lightingStates: lights });
+    }
   },
 
   cycleTimeOfDay: () => {
-    const current = get().timeOfDay;
-    const next: TimeOfDay = current === 'day' ? 'sunset' : current === 'sunset' ? 'night' : 'day';
+    const order: TimeOfDay[] = ['day', 'sunset', 'night'];
+    const next = order[(order.indexOf(get().timeOfDay) + 1) % order.length];
     get().setTimeOfDay(next);
   },
 
-  setQuality: (quality) => {
-    set((state) => ({
-      quality,
-      settings: {
-        ...state.settings,
-        quality,
-      },
-    }));
-  },
-
-  setPhotoMode: (isPhotoMode) => {
-    set({ isPhotoMode, activeInteractable: null });
-  },
-
-  triggerScreenshot: () => {
-    set((state) => ({ screenshotTrigger: state.screenshotTrigger + 1 }));
-  },
+  setQuality: (quality) => set({ quality }),
+  setPhotoMode: (isPhotoMode) => set({ isPhotoMode }),
+  triggerScreenshot: () => set((state) => ({ screenshotTrigger: state.screenshotTrigger + 1 })),
+  togglePerf: () => set((state) => ({ showPerf: !state.showPerf })),
+  setShowPerf: (showPerf) => set({ showPerf }),
 
   setControl: (key, active) => {
     set((state) => ({
-      controls: {
-        ...state.controls,
-        [key]: active,
-      },
+      controls: { ...state.controls, [key]: active },
     }));
   },
 
-  setJoystickVector: (joystickVector) => {
-    set({ joystickVector });
-  },
+  setJoystickVector: (joystickVector) => set({ joystickVector }),
 
   addLookDelta: (delta) => {
     set((state) => ({
@@ -385,119 +165,69 @@ export const useGameStore = create<GameStore>((set, get) => ({
   },
 
   triggerTeleport: (position, yaw) => {
-    if (get().posture !== 'standing') {
-      get().exitSitting();
-    }
     set({
       isTeleporting: true,
       teleportTarget: { position, yaw },
-      controls: { ...initialControls },
-      joystickVector: { x: 0, y: 0 },
+      isPaused: false,
     });
   },
 
   completeTeleport: () => {
-    set({
-      isTeleporting: false,
-      teleportTarget: null,
-    });
+    set({ isTeleporting: false, teleportTarget: null });
   },
 
-  // -------------------- POSTURE ACTIONS --------------------
   enterSitting: (target) => {
     audioEngine.playSit();
-    set({
-      posture: 'sitting',
-      postureTarget: target,
-      controls: { ...initialControls },
-      joystickVector: { x: 0, y: 0 },
-      activeInteractable: null,
-    });
+    set({ posture: 'sitting', postureTarget: target, controls: { ...INITIAL_CONTROLS } });
   },
 
   exitSitting: () => {
-    const current = get().postureTarget;
     audioEngine.playSit();
-    set({
-      posture: 'standing',
-      postureTarget: null,
-    });
-    if (current) {
-      get().triggerTeleport(current.returnPosition, current.returnYaw);
-    }
+    set({ posture: 'standing', postureTarget: null });
   },
 
   enterLying: (target) => {
     audioEngine.playSit();
     audioEngine.setBreathing(true);
-    set({
-      posture: 'lying',
-      postureTarget: target,
-      controls: { ...initialControls },
-      joystickVector: { x: 0, y: 0 },
-      activeInteractable: null,
-    });
+    set({ posture: 'lying', postureTarget: target, controls: { ...INITIAL_CONTROLS } });
   },
 
   exitLying: () => {
-    const current = get().postureTarget;
-    audioEngine.setBreathing(false);
     audioEngine.playSit();
-    set({
-      posture: 'standing',
-      postureTarget: null,
-    });
-    if (current) {
-      get().triggerTeleport(current.returnPosition, current.returnYaw);
-    }
+    audioEngine.setBreathing(false);
+    set({ posture: 'standing', postureTarget: null });
   },
 
-  // -------------------- INTERACTION SYSTEM --------------------
-  setActiveInteractable: (activeInteractable) => {
-    set({ activeInteractable });
-  },
+  setActiveInteractable: (activeInteractable) => set({ activeInteractable }),
 
   toggleDoor: (doorId) => {
-    const nextState = !get().doorStates[doorId];
-    const isSliding = doorId === 'door-terrace' || doorId === 'door-master-bath';
-    audioEngine.playDoor(nextState, isSliding ? 'sliding' : 'hinged');
+    const current = !!get().doorStates[doorId];
+    const next = !current;
+    const isSliding = doorId.includes('terrace') || doorId.includes('bath');
+    audioEngine.playDoor(next, isSliding ? 'sliding' : 'hinged');
     set((state) => ({
-      doorStates: {
-        ...state.doorStates,
-        [doorId]: nextState,
-      },
+      doorStates: { ...state.doorStates, [doorId]: next },
     }));
   },
 
   setDoorState: (doorId, open) => {
     set((state) => ({
-      doorStates: {
-        ...state.doorStates,
-        [doorId]: open,
-      },
+      doorStates: { ...state.doorStates, [doorId]: open },
     }));
   },
 
   toggleWindow: (windowId) => {
-    audioEngine.playDoor(!get().windowStates[windowId], 'sliding');
-    set((state) => {
-      const next = {
-        ...state.windowStates,
-        [windowId]: !state.windowStates[windowId],
-      };
-      const anyOpen = Object.values(next).some((val) => val);
-      audioEngine.setWind(anyOpen);
-      return { windowStates: next };
-    });
+    const next = !get().windowStates[windowId];
+    audioEngine.playDoor(next, 'sliding');
+    const newWindows = { ...get().windowStates, [windowId]: next };
+    audioEngine.setWind(Object.values(newWindows).some(Boolean));
+    set({ windowStates: newWindows });
   },
 
   toggleCurtains: (curtainId) => {
     audioEngine.playSit();
     set((state) => ({
-      curtainStates: {
-        ...state.curtainStates,
-        [curtainId]: !state.curtainStates[curtainId],
-      },
+      curtainStates: { ...state.curtainStates, [curtainId]: !state.curtainStates[curtainId] },
     }));
   },
 
@@ -513,18 +243,14 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
   setAllLights: (on) => {
     audioEngine.playSwitch();
-    set((state) => {
-      const updated: Record<string, boolean> = {};
-      Object.keys(state.lightingStates).forEach((k) => {
-        updated[k] = on;
-      });
-      return { lightingStates: updated };
-    });
+    const updated: Record<string, boolean> = {};
+    Object.keys(get().lightingStates).forEach((k) => { updated[k] = on; });
+    set({ lightingStates: updated });
   },
 
   toggleFireplace: () => {
-    audioEngine.playSwitch();
     const next = !get().fireplaceOn;
+    audioEngine.playSwitch();
     audioEngine.setFireplace(next);
     set({ fireplaceOn: next });
   },
@@ -552,15 +278,15 @@ export const useGameStore = create<GameStore>((set, get) => ({
   },
 
   toggleFaucet: () => {
-    audioEngine.playSwitch();
     const next = !get().faucetRunning;
+    audioEngine.playSwitch();
     audioEngine.setFaucet(next);
     set({ faucetRunning: next });
   },
 
   toggleShower: () => {
-    audioEngine.playSwitch();
     const next = !get().showerRunning;
+    audioEngine.playSwitch();
     audioEngine.setShower(next);
     set({ showerRunning: next });
   },
@@ -572,55 +298,27 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
   toggleJacuzziJets: () => {
     audioEngine.playSwitch();
-    const next = !get().jacuzziJetsOn;
-    audioEngine.setPoolNear(next || get().isNearJacuzzi);
-    set({ jacuzziJetsOn: next });
+    set((state) => ({ jacuzziJetsOn: !state.jacuzziJetsOn }));
   },
 
-  setIsNearJacuzzi: (near) => {
-    if (get().isNearJacuzzi !== near) {
-      audioEngine.setPoolNear(near || get().jacuzziJetsOn);
-      set({ isNearJacuzzi: near });
+  setIsNearJacuzzi: (isNearJacuzzi) => {
+    if (get().isNearJacuzzi !== isNearJacuzzi) {
+      set({ isNearJacuzzi });
+      audioEngine.setPoolNear(isNearJacuzzi);
     }
-  },
-
-  // -------------------- AUDIO SETTINGS --------------------
-  setVolume: (volume) => {
-    audioEngine.setVolume(volume);
-    set((state) => ({
-      settings: {
-        ...state.settings,
-        volume,
-      },
-    }));
-  },
-
-  toggleMute: () => {
-    const nextMuted = !get().settings.isMuted;
-    audioEngine.setMuted(nextMuted);
-    set((state) => ({
-      settings: {
-        ...state.settings,
-        isMuted: nextMuted,
-      },
-    }));
   },
 
   updateSettings: (partial) => {
-    if (typeof partial.volume === 'number') {
-      audioEngine.setVolume(partial.volume);
-    }
-    if (typeof partial.isMuted === 'boolean') {
-      audioEngine.setMuted(partial.isMuted);
-    }
-    if (partial.quality) {
-      set({ quality: partial.quality });
-    }
-    set((state) => ({
-      settings: {
-        ...state.settings,
-        ...partial,
-      },
-    }));
+    set((state) => {
+      const updated = { ...state.settings, ...partial };
+      if (typeof partial.volume === 'number') audioEngine.setVolume(partial.volume);
+      if (typeof partial.isMuted === 'boolean') audioEngine.setMuted(partial.isMuted);
+      if (partial.quality) state.setQuality(partial.quality);
+      return { settings: updated };
+    });
+  },
+
+  resetSettings: () => {
+    set({ settings: { ...INITIAL_SETTINGS } });
   },
 }));
