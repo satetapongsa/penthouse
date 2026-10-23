@@ -4,6 +4,7 @@ import React, { useMemo, useRef } from 'react';
 import * as THREE from 'three';
 import { useFrame } from '@react-three/fiber';
 import { RigidBody, CuboidCollider } from '@react-three/rapier';
+import { RoundedBox } from '@react-three/drei';
 import {
   getCalacattaMarbleTexture,
   getPaleOakTexture,
@@ -12,6 +13,7 @@ import {
 } from '@/lib/materials';
 import { useGameStore } from '@/store/useGameStore';
 import { DiningTableSet } from './DiningTableSet';
+import { LuxuryEspressoMachine } from '../decor/TablewareSet';
 
 export const KitchenDiningFurniture: React.FC = () => {
   const marbleTex = useMemo(() => getCalacattaMarbleTexture(), []);
@@ -44,37 +46,39 @@ export const KitchenDiningFurniture: React.FC = () => {
   return (
     <group>
       {/* -------------------- 1. WATERFALL CALACATTA MARBLE ISLAND -------------------- */}
+      {/* Kitchen counter height 0.9m, waterfall marble ends */}
       <group position={[10.75, 0, -1.0]}>
         <RigidBody type="fixed" colliders={false}>
-          <CuboidCollider args={[1.8, 0.46, 0.6]} position={[0, 0.46, 0]} />
+          <CuboidCollider args={[1.8, 0.45, 0.6]} position={[0, 0.45, 0]} />
         </RigidBody>
 
-        <mesh position={[0, 0.89, 0]} castShadow receiveShadow>
-          <boxGeometry args={[3.6, 0.06, 1.2]} />
+        {/* Countertop Slab (Height 0.9m) */}
+        <RoundedBox args={[3.6, 0.06, 1.2]} radius={0.02} smoothness={3} position={[0, 0.87, 0]} castShadow receiveShadow>
           <meshPhysicalMaterial color={colors.calacatta} map={marbleTex} roughness={0.12} clearcoat={0.9} />
-        </mesh>
+        </RoundedBox>
 
-        <mesh position={[-1.77, 0.44, 0]} castShadow receiveShadow>
-          <boxGeometry args={[0.06, 0.88, 1.2]} />
+        {/* Waterfall End Panels */}
+        <RoundedBox args={[0.06, 0.87, 1.2]} radius={0.015} smoothness={3} position={[-1.77, 0.435, 0]} castShadow receiveShadow>
           <meshPhysicalMaterial color={colors.calacatta} map={marbleTex} roughness={0.12} clearcoat={0.9} />
-        </mesh>
-        <mesh position={[1.77, 0.44, 0]} castShadow receiveShadow>
-          <boxGeometry args={[0.06, 0.88, 1.2]} />
+        </RoundedBox>
+        <RoundedBox args={[0.06, 0.87, 1.2]} radius={0.015} smoothness={3} position={[1.77, 0.435, 0]} castShadow receiveShadow>
           <meshPhysicalMaterial color={colors.calacatta} map={marbleTex} roughness={0.12} clearcoat={0.9} />
-        </mesh>
+        </RoundedBox>
 
+        {/* Fluted Pale Oak Cabinet Base */}
         <mesh position={[0, 0.44, 0.12]} castShadow receiveShadow>
-          <boxGeometry args={[3.42, 0.84, 0.92]} />
+          <boxGeometry args={[3.42, 0.82, 0.92]} />
           <meshStandardMaterial color={colors.paleOak} map={oakTex} roughness={0.5} />
         </mesh>
 
+        {/* Brushed Brass Base Plinth */}
         <mesh position={[0, 0.04, 0.12]}>
           <boxGeometry args={[3.44, 0.08, 0.88]} />
           <meshStandardMaterial color={colors.brass} metalness={0.88} roughness={0.25} />
         </mesh>
 
         {/* Prep Sink & Brass Gooseneck Faucet */}
-        <group position={[-0.8, 0.92, 0.05]}>
+        <group position={[-0.8, 0.9, 0.05]}>
           <mesh position={[0, -0.1, 0]}>
             <boxGeometry args={[0.55, 0.2, 0.42]} />
             <meshStandardMaterial color="#2B2824" metalness={0.8} roughness={0.3} />
@@ -91,7 +95,7 @@ export const KitchenDiningFurniture: React.FC = () => {
 
         {/* Flush Induction Cooktop (Interactive) */}
         <group
-          position={[0.8, 0.925, 0.05]}
+          position={[0.8, 0.905, 0.05]}
           userData={{
             interactable: true,
             interactableId: 'kitchen-cooktop',
@@ -117,7 +121,7 @@ export const KitchenDiningFurniture: React.FC = () => {
           )}
         </group>
 
-        {/* 4 Bouclé Bar Stools (Interactive Seating) */}
+        {/* 4 Bouclé Bar Stools (Seat Height 0.65m, Interactive Seating) */}
         {[-1.2, -0.4, 0.4, 1.2].map((bx, idx) => (
           <group
             key={`stool-${idx}`}
@@ -138,24 +142,30 @@ export const KitchenDiningFurniture: React.FC = () => {
               },
             }}
           >
-            <mesh position={[0, 0.62, 0]} castShadow>
-              <cylinderGeometry args={[0.2, 0.19, 0.1, 20]} />
+            {/* Rounded Bouclé Seat Pad (Seat Height 0.65m) */}
+            <RoundedBox args={[0.42, 0.1, 0.42]} radius={0.04} smoothness={3} position={[0, 0.62, 0]} castShadow>
               <meshStandardMaterial color={colors.cream} map={boucleTex} roughness={0.85} />
+            </RoundedBox>
+            {/* Brass Footrest Ring */}
+            <mesh position={[0, 0.24, 0]} rotation={[Math.PI / 2, 0, 0]}>
+              <torusGeometry args={[0.18, 0.01, 12, 24]} />
+              <meshStandardMaterial color={colors.brass} metalness={0.9} roughness={0.2} />
             </mesh>
+            {/* Tapered Legs */}
             {[[-0.14, -0.14], [0.14, -0.14], [-0.14, 0.14], [0.14, 0.14]].map(([lx, lz], lidx) => (
               <mesh key={`leg-${lidx}`} position={[lx, 0.3, lz]}>
-                <cylinderGeometry args={[0.014, 0.01, 0.6, 8]} />
+                <cylinderGeometry args={[0.014, 0.01, 0.6, 10]} />
                 <meshStandardMaterial color={colors.brass} metalness={0.9} roughness={0.2} />
               </mesh>
             ))}
           </group>
         ))}
 
-        {/* Trio of Brass Pendants */}
+        {/* Trio of Brass Island Pendants */}
         {[-0.9, 0, 0.9].map((px, idx) => (
           <group key={`pendant-${idx}`} position={[px, 2.5, 0]}>
             <mesh position={[0, 0.45, 0]}>
-              <cylinderGeometry args={[0.006, 0.006, 0.9, 8]} />
+              <cylinderGeometry args={[0.005, 0.005, 0.9, 8]} />
               <meshStandardMaterial color={colors.brass} metalness={0.9} roughness={0.2} />
             </mesh>
             <mesh position={[0, 0, 0]} castShadow>
@@ -168,6 +178,27 @@ export const KitchenDiningFurniture: React.FC = () => {
             </mesh>
           </group>
         ))}
+
+        {/* Travertine Fruit Bowl with Lemons */}
+        <group position={[0, 0.9, 0.28]}>
+          <mesh castShadow>
+            <cylinderGeometry args={[0.18, 0.09, 0.06, 20]} />
+            <meshStandardMaterial color={colors.travertine} roughness={0.4} />
+          </mesh>
+          {[-0.05, 0.04, 0.0].map((lx, idx) => (
+            <mesh key={`lemon-${idx}`} position={[lx, 0.05, (idx === 1 ? -0.04 : 0.03)]} castShadow>
+              <sphereGeometry args={[0.032, 10, 10]} />
+              <meshStandardMaterial color="#E8C842" roughness={0.5} />
+            </mesh>
+          ))}
+        </group>
+
+        {/* Layered End-Grain Wood Cutting Boards */}
+        <group position={[-1.4, 0.9, -0.2]} rotation={[0, 0.1, 0]}>
+          <RoundedBox args={[0.35, 0.025, 0.24]} radius={0.008} smoothness={2} castShadow>
+            <meshStandardMaterial color={colors.paleOak} map={oakTex} roughness={0.5} />
+          </RoundedBox>
+        </group>
       </group>
 
       {/* -------------------- 2. BACK KITCHEN CABINETRY BANK & APPLIANCES -------------------- */}
@@ -181,11 +212,39 @@ export const KitchenDiningFurniture: React.FC = () => {
           <meshStandardMaterial color={colors.paleOak} map={oakTex} roughness={0.5} />
         </mesh>
 
+        {/* Calacatta Splashback & Counter Alcove */}
         <group position={[0, 1.35, 0.28]}>
           <mesh>
             <boxGeometry args={[2.6, 0.9, 0.1]} />
             <meshPhysicalMaterial color={colors.calacatta} map={marbleTex} roughness={0.15} />
           </mesh>
+          {/* Luxury Espresso Machine on Counter */}
+          <LuxuryEspressoMachine position={[-0.8, 0.45, 0.08]} rotationY={0} />
+
+          {/* Minimalist 2-Slice Toaster */}
+          <group position={[0.8, 0.45, 0.08]}>
+            <RoundedBox args={[0.24, 0.18, 0.16]} radius={0.02} smoothness={2} position={[0, 0.09, 0]} castShadow>
+              <meshStandardMaterial color="#FAF8F3" roughness={0.2} metalness={0.1} />
+            </RoundedBox>
+            <mesh position={[0, 0.18, 0]}>
+              <boxGeometry args={[0.16, 0.01, 0.02]} />
+              <meshStandardMaterial color={colors.brass} metalness={0.9} roughness={0.2} />
+            </mesh>
+          </group>
+
+          {/* Brass Utensil Hanging Rail */}
+          <group position={[0, 0.78, 0.06]}>
+            <mesh rotation={[0, 0, Math.PI / 2]} castShadow>
+              <cylinderGeometry args={[0.005, 0.005, 1.6, 12]} />
+              <meshStandardMaterial color={colors.brass} metalness={0.9} roughness={0.2} />
+            </mesh>
+            {[-0.5, -0.2, 0.1, 0.4].map((ux, idx) => (
+              <mesh key={`utensil-${idx}`} position={[ux, -0.1, 0]} castShadow>
+                <cylinderGeometry args={[0.004, 0.004, 0.18, 8]} />
+                <meshStandardMaterial color={colors.brass} metalness={0.9} roughness={0.2} />
+              </mesh>
+            ))}
+          </group>
         </group>
 
         {/* UPPER CABINET (INTERACTIVE) */}

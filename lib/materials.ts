@@ -183,23 +183,77 @@ export function getBoucleFabricTexture(): THREE.CanvasTexture {
   const ctx = canvas.getContext('2d');
   if (!ctx) return new THREE.CanvasTexture(canvas);
 
-  ctx.fillStyle = '#F5F2EB';
+  ctx.fillStyle = '#F8F5EE';
   ctx.fillRect(0, 0, 512, 512);
 
   // Nubby tactile loops
-  ctx.fillStyle = '#EDE8DE';
-  for (let x = 0; x < 512; x += 12) {
-    for (let y = 0; y < 512; y += 12) {
-      if (Math.random() > 0.4) {
+  ctx.fillStyle = '#EDE7DC';
+  for (let x = 0; x < 512; x += 10) {
+    for (let y = 0; y < 512; y += 10) {
+      if (Math.random() > 0.35) {
         ctx.beginPath();
-        ctx.arc(x + Math.random() * 3, y + Math.random() * 3, Math.random() * 2 + 1, 0, Math.PI * 2);
+        ctx.arc(x + Math.random() * 3, y + Math.random() * 3, Math.random() * 2.2 + 1, 0, Math.PI * 2);
         ctx.fill();
       }
     }
   }
 
-  const texture = configureTexture(new THREE.CanvasTexture(canvas), 4, 4);
+  const texture = configureTexture(new THREE.CanvasTexture(canvas), 6, 6);
   textureCache.set('boucle', texture);
+  return texture;
+}
+
+/**
+ * Procedural Natural Woven Linen Texture with subtle cross-hatching
+ */
+export function getLinenTexture(): THREE.CanvasTexture {
+  if (typeof document === 'undefined') return new THREE.CanvasTexture(new OffscreenCanvas(1, 1) as unknown as HTMLCanvasElement);
+  if (textureCache.has('linen')) return textureCache.get('linen')!;
+
+  const canvas = document.createElement('canvas');
+  canvas.width = 512;
+  canvas.height = 512;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return new THREE.CanvasTexture(canvas);
+
+  ctx.fillStyle = '#F4EFE6';
+  ctx.fillRect(0, 0, 512, 512);
+
+  ctx.fillStyle = 'rgba(215, 204, 188, 0.4)';
+  for (let i = 0; i < 512; i += 4) {
+    ctx.fillRect(i, 0, 1.5, 512);
+    ctx.fillRect(0, i, 512, 1.5);
+  }
+
+  const texture = configureTexture(new THREE.CanvasTexture(canvas), 8, 8);
+  textureCache.set('linen', texture);
+  return texture;
+}
+
+/**
+ * Procedural Brushed Brass Anisotropy & Micro-Scratch Texture
+ */
+export function getBrushedBrassTexture(): THREE.CanvasTexture {
+  if (typeof document === 'undefined') return new THREE.CanvasTexture(new OffscreenCanvas(1, 1) as unknown as HTMLCanvasElement);
+  if (textureCache.has('brushed_brass')) return textureCache.get('brushed_brass')!;
+
+  const canvas = document.createElement('canvas');
+  canvas.width = 512;
+  canvas.height = 512;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return new THREE.CanvasTexture(canvas);
+
+  ctx.fillStyle = '#C8A359';
+  ctx.fillRect(0, 0, 512, 512);
+
+  ctx.fillStyle = 'rgba(235, 205, 135, 0.25)';
+  for (let i = 0; i < 200; i++) {
+    const y = Math.random() * 512;
+    ctx.fillRect(0, y, 512, Math.random() * 1.5 + 0.5);
+  }
+
+  const texture = configureTexture(new THREE.CanvasTexture(canvas), 2, 2);
+  textureCache.set('brushed_brass', texture);
   return texture;
 }
 

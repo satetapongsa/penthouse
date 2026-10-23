@@ -3,6 +3,7 @@
 import React, { useMemo, useRef, useEffect } from 'react';
 import * as THREE from 'three';
 import { useFrame } from '@react-three/fiber';
+import { RoundedBox } from '@react-three/drei';
 import {
   getCalacattaMarbleTexture,
   getPaleOakTexture,
@@ -10,6 +11,8 @@ import {
   LUXURY_PALETTE,
 } from '@/lib/materials';
 import { useGameStore } from '@/store/useGameStore';
+import { GrandPianoSet } from './GrandPianoSet';
+import { ModernWallSconce } from '../decor/LightingFixtures';
 
 export const LivingEntertainment: React.FC = () => {
   const marbleTex = useMemo(() => getCalacattaMarbleTexture(), []);
@@ -34,6 +37,7 @@ export const LivingEntertainment: React.FC = () => {
   const windowSlideRef = useRef<THREE.Group>(null);
   const curtainsLeftRef = useRef<THREE.Group>(null);
   const curtainsRightRef = useRef<THREE.Group>(null);
+  const recordPlatterRef = useRef<THREE.Group>(null);
 
   const tvCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const tvTextureRef = useRef<THREE.CanvasTexture | null>(null);
@@ -95,7 +99,12 @@ export const LivingEntertainment: React.FC = () => {
       }
     }
 
-    // 2. Linear Fireplace Flame Flickering
+    // 2. Vinyl Record Player Platter Rotation
+    if (recordPlatterRef.current) {
+      recordPlatterRef.current.rotation.y += delta * 1.8;
+    }
+
+    // 3. Fireplace Flame Flickering
     if (fireplaceOn && flameLightRef.current && flameGroupRef.current) {
       flameLightRef.current.intensity = 1.4 + Math.sin(time * 16) * 0.4 + (Math.random() - 0.5) * 0.25;
       flameGroupRef.current.children.forEach((child, idx) => {
@@ -103,7 +112,7 @@ export const LivingEntertainment: React.FC = () => {
       });
     }
 
-    // 3. Real-Time Clock Hands
+    // 4. Real-Time Clock Hands
     const d = new Date();
     const secs = d.getSeconds() + d.getMilliseconds() / 1000;
     const mins = d.getMinutes() + secs / 60;
@@ -113,13 +122,13 @@ export const LivingEntertainment: React.FC = () => {
     if (clockMinuteHandRef.current) clockMinuteHandRef.current.rotation.z = -(mins / 60) * Math.PI * 2;
     if (clockHourHandRef.current) clockHourHandRef.current.rotation.z = -(hrs / 12) * Math.PI * 2;
 
-    // 4. Smooth Window Slide
+    // 5. Smooth Window Slide
     if (windowSlideRef.current) {
       const targetX = isWindowOpen ? 1.6 : 0;
       windowSlideRef.current.position.x = THREE.MathUtils.damp(windowSlideRef.current.position.x, targetX, 5.0, delta);
     }
 
-    // 5. Curtains
+    // 6. Curtains Animation
     if (curtainsLeftRef.current && curtainsRightRef.current) {
       const leftTargetScale = areCurtainsClosed ? 1.0 : 0.25;
       const rightTargetScale = areCurtainsClosed ? 1.0 : 0.25;
@@ -132,17 +141,69 @@ export const LivingEntertainment: React.FC = () => {
     <group>
       {/* 1. ENTERTAINMENT & FIREPLACE FEATURE WALL */}
       <group position={[1.8, 0, 1.88]}>
+        {/* Light Honed Roman Travertine Feature Wall Slab */}
         <mesh position={[0, 1.7, 0]} receiveShadow>
           <boxGeometry args={[4.2, 3.4, 0.14]} />
-          <meshStandardMaterial color={colors.travertine} map={marbleTex} roughness={0.4} />
+          <meshStandardMaterial color={colors.travertine} map={marbleTex} roughness={0.38} />
         </mesh>
 
-        <mesh position={[0, 0.32, 0.2]} castShadow receiveShadow>
-          <boxGeometry args={[3.4, 0.42, 0.48]} />
-          <meshStandardMaterial color={colors.paleOak} map={oakTex} roughness={0.5} />
-        </mesh>
+        {/* Fluted Pale Oak Low-Profile TV Credenza */}
+        <group position={[0, 0.24, 0.22]}>
+          <RoundedBox args={[3.5, 0.46, 0.48]} radius={0.03} smoothness={3} castShadow receiveShadow>
+            <meshStandardMaterial color={colors.paleOak} map={oakTex} roughness={0.5} />
+          </RoundedBox>
+          {/* Calacatta Marble Top Inlay */}
+          <mesh position={[0, 0.24, 0]} castShadow>
+            <boxGeometry args={[3.52, 0.02, 0.5]} />
+            <meshPhysicalMaterial color={colors.calacatta} map={marbleTex} roughness={0.15} clearcoat={0.9} />
+          </mesh>
+          {/* Recessed Brass Finger Pull Handles */}
+          {[-1.2, -0.4, 0.4, 1.2].map((hx, idx) => (
+            <mesh key={`credenza-handle-${idx}`} position={[hx, 0.1, 0.245]}>
+              <boxGeometry args={[0.08, 0.015, 0.01]} />
+              <meshStandardMaterial color={colors.brass} metalness={0.9} roughness={0.2} />
+            </mesh>
+          ))}
+        </group>
 
-        {/* 85" OLED TV (INTERACTIVE) */}
+        {/* Vintage Turntable / Vinyl Record Player on Credenza Top */}
+        <group position={[-1.2, 0.52, 0.22]}>
+          <RoundedBox args={[0.42, 0.06, 0.36]} radius={0.01} smoothness={2} position={[0, 0.03, 0]} castShadow>
+            <meshStandardMaterial color="#4A3B32" roughness={0.4} />
+          </RoundedBox>
+          {/* Rotating Aluminum Platter */}
+          <group ref={recordPlatterRef} position={[-0.04, 0.065, 0]}>
+            <mesh castShadow>
+              <cylinderGeometry args={[0.13, 0.13, 0.01, 24]} />
+              <meshStandardMaterial color="#22201D" roughness={0.3} metalness={0.8} />
+            </mesh>
+            <mesh position={[0, 0.006, 0]}>
+              <cylinderGeometry args={[0.04, 0.04, 0.002, 16]} />
+              <meshBasicMaterial color="#C5A059" />
+            </mesh>
+          </group>
+          {/* Tonearm */}
+          <group position={[0.14, 0.08, -0.06]} rotation={[0, 0.25, 0]}>
+            <mesh rotation={[Math.PI / 2, 0, 0]} castShadow>
+              <cylinderGeometry args={[0.003, 0.003, 0.18, 8]} />
+              <meshStandardMaterial color={colors.brass} metalness={0.9} roughness={0.2} />
+            </mesh>
+          </group>
+        </group>
+
+        {/* Abstract Sculptural Bronze Rings on Credenza Top */}
+        <group position={[1.2, 0.52, 0.22]}>
+          <mesh position={[0, 0.03, 0]} castShadow>
+            <cylinderGeometry args={[0.07, 0.08, 0.06, 16]} />
+            <meshStandardMaterial color={colors.travertine} roughness={0.4} />
+          </mesh>
+          <mesh position={[0, 0.18, 0]} rotation={[0.4, 0.2, 0]} castShadow>
+            <torusGeometry args={[0.12, 0.018, 12, 32]} />
+            <meshStandardMaterial color={colors.brass} metalness={0.88} roughness={0.25} />
+          </mesh>
+        </group>
+
+        {/* 85" Ultra-Slim OLED TV (INTERACTIVE) */}
         <group
           position={[0, 1.85, 0.08]}
           userData={{
@@ -169,7 +230,7 @@ export const LivingEntertainment: React.FC = () => {
           )}
         </group>
 
-        {/* REAL-TIME CLOCK */}
+        {/* REAL-TIME WALL CLOCK */}
         <group position={[1.65, 2.65, 0.08]}>
           <mesh rotation={[Math.PI / 2, 0, 0]} castShadow>
             <cylinderGeometry args={[0.22, 0.22, 0.03, 24]} />
@@ -247,52 +308,12 @@ export const LivingEntertainment: React.FC = () => {
         </group>
       </group>
 
-      {/* 2. WHITE LACQUER GRAND PIANO */}
-      <group position={[-1.8, 0, 0.8]} rotation={[0, Math.PI / 4, 0]}>
-        <mesh position={[0, 0.68, 0]} castShadow receiveShadow>
-          <boxGeometry args={[1.4, 0.32, 1.2]} />
-          <meshPhysicalMaterial color="#FAF9F5" roughness={0.08} clearcoat={1.0} reflectivity={0.9} />
-        </mesh>
-        {[
-          [-0.6, -0.4],
-          [0.6, -0.4],
-          [0, 0.45],
-        ].map(([px, pz], pidx) => (
-          <mesh key={`piano-leg-${pidx}`} position={[px, 0.26, pz]}>
-            <cylinderGeometry args={[0.035, 0.025, 0.52, 12]} />
-            <meshPhysicalMaterial color="#FAF9F5" roughness={0.08} clearcoat={1.0} />
-          </mesh>
-        ))}
-        {/* Keys */}
-        <mesh position={[0, 0.69, -0.52]}>
-          <boxGeometry args={[1.1, 0.04, 0.16]} />
-          <meshStandardMaterial color="#FFFFFF" roughness={0.2} />
-        </mesh>
-      </group>
+      {/* 2. GRAND PIANO & BENCH */}
+      <GrandPianoSet />
 
-      {/* 3. 5-TIER BRASS & OAK BOOKSHELVES */}
-      <group position={[6.0, 0, 1.88]}>
-        <mesh position={[0, 1.6, 0]} castShadow receiveShadow>
-          <boxGeometry args={[2.4, 3.2, 0.38]} />
-          <meshStandardMaterial color={colors.paleOak} map={oakTex} roughness={0.5} />
-        </mesh>
-        {[0.6, 1.2, 1.8, 2.4].map((sy, sidx) => (
-          <group key={`shelf-${sidx}`} position={[0, sy, 0.12]}>
-            <mesh position={[0, 0, 0]} castShadow>
-              <boxGeometry args={[2.2, 0.04, 0.32]} />
-              <meshStandardMaterial color={colors.brass} metalness={0.88} roughness={0.22} />
-            </mesh>
-            <mesh position={[-0.4, 0.15, 0]}>
-              <boxGeometry args={[0.9, 0.26, 0.22]} />
-              <meshStandardMaterial map={bookTex} roughness={0.5} />
-            </mesh>
-            <mesh position={[0.5, 0.12, 0]}>
-              <cylinderGeometry args={[0.07, 0.09, 0.2, 16]} />
-              <meshStandardMaterial color={colors.travertine} roughness={0.3} />
-            </mesh>
-          </group>
-        ))}
-      </group>
+      {/* 3. WALL SCONCES */}
+      <ModernWallSconce position={[-0.8, 2.0, 1.86]} />
+      <ModernWallSconce position={[4.4, 2.0, 1.86]} />
 
       {/* 4. OPENABLE SLIDING WINDOW & CURTAINS */}
       <group position={[-1.4, 1.7, -5.92]}>
