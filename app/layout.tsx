@@ -17,6 +17,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://penthouse-walkthrough.vercel.app'),
   title: 'THE SKYLINE PENTHOUSE | 3D Luxury Architectural Walkthrough',
   description:
     'An immersive first-person 3D architectural walkthrough of an ultra-luxury ~280 m² skyline penthouse with 3.4m ceiling height, bright ivory travertine, and panoramic floor-to-ceiling glass.',
@@ -30,6 +31,27 @@ export const metadata: Metadata = {
     'Luxury Real Estate',
   ],
   authors: [{ name: 'Skyline Penthouse Architecture' }],
+  openGraph: {
+    title: 'THE SKYLINE PENTHOUSE | 3D Luxury Architectural Walkthrough',
+    description:
+      'An immersive first-person 3D architectural walkthrough of an ultra-luxury ~280 m² skyline penthouse with 3.4m ceiling height, bright ivory travertine, and panoramic floor-to-ceiling glass.',
+    images: [
+      {
+        url: '/og-banner.png',
+        width: 1200,
+        height: 630,
+        alt: 'THE SKYLINE PENTHOUSE',
+      },
+    ],
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'THE SKYLINE PENTHOUSE | 3D Luxury Architectural Walkthrough',
+    description:
+      'An immersive first-person 3D architectural walkthrough of an ultra-luxury ~280 m² skyline penthouse with 3.4m ceiling height, bright ivory travertine, and panoramic floor-to-ceiling glass.',
+    images: ['/og-banner.png'],
+  },
 };
 
 export const viewport: Viewport = {

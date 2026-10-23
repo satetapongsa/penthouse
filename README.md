@@ -1,112 +1,122 @@
+<p align="center"><img src="docs/banner.png" alt="THE SKYLINE PENTHOUSE" width="100%"></p>
+
 # THE SKYLINE PENTHOUSE
 
-An immersive first-person 3D walkthrough of an ultra-luxury penthouse (~280 m², ceiling 3.4m) in a major city, running entirely in the browser like a high-end architectural game.
+An immersive first-person 3D architectural walkthrough of an ultra-luxury penthouse (~280 m², ceiling 3.4m) in a major metropolitan city, running entirely in the browser like a high-end video game.
 
-Built with **Next.js App Router**, **TypeScript**, **Tailwind CSS**, and **Three.js** via **@react-three/fiber**, **@react-three/drei**, and **@react-three/rapier**.
-
----
-
-## Aesthetic & Architecture
-
-- **Theme**: Bright, airy white and cream — ivory microcement, warm white plaster, champagne, beige, light travertine stone tiles, pale Scandinavian oak, brushed brass accents, and soft sage plants.
-- **Procedural Purity**: 100% procedural code execution — zero external GLB, HDR, image, or audio files required. Instant load, zero external asset bandwidth, no external API keys or backend dependencies.
-- **Physical Penthouse Shell (~280 m² + 105 m² Sky Terrace)**:
-  1. **Grand Living Gallery (Main Hall)** (11m x 8m, 88 m²): Panoramic city-facing glass wall and sliding terrace access.
-  2. **Kitchen & Dining Pavilion** (6.5m x 8m, 52 m²): Open entertaining layout adjacent to living room.
-  3. **Private Sky Terrace & Jacuzzi** (17.5m x 6m, 105 m²): Open-air terrace with 1.2m glass railing and recessed jacuzzi/pool basin.
-  4. **Gallery Hallway** (3m x 8m, 24 m²): Central connecting corridor with architectural archways.
-  5. **Master Bedroom Suite** (8m x 6m, 48 m²): Far-west sanctuary with floor-to-ceiling skyline windows.
-  6. **Walk-in Dressing Wardrobe** (4m x 5m, 20 m²): Dedicated dressing gallery connecting to master bath.
-  7. **Master Bath & Spa** (4m x 5m, 20 m²): Luxury ensuite with travertine finishes and tub alcove.
-  8. **Guest Powder Room** (3m x 3m, 9 m²): Intimate guest powder room with brass trim.
-  9. **Grand Entrance Foyer** (6m x 4.5m, 27 m²): Private high-speed elevator arrival vestibule.
-  10. **Guest Bedroom Suite** (7m x 4.5m, 31.5 m²): Private suite on the southeastern wing.
-- **Ceiling Height**: 3.4m across all interior zones with continuous baseboards and crown molding.
-- **Polished Floor Reflections**: Real-time planar floor reflections via `@react-three/drei`'s `MeshReflectorMaterial`, capturing mirrors of furniture, lighting, and panoramic windows.
-- **Public Area Furnishings (Phase 3)**:
-  - **Foyer**: Honed Calacatta marble console table with fluted oak base, 1.2m round brass bevel wall mirror, fluted shoe cabinet credenza with potted plant, and modernist bronze ribbon sculpture on a fluted travertine pedestal.
-  - **Living Room**: Large ivory bouclé L-shaped sectional sofa with scatter pillows and cashmere blanket, nested travertine and brass coffee table with art monographs and floral vase, two curved bouclé accent armchairs, 85" OLED TV feature wall with floating media console and glowing linear fireplace, white lacquer grand piano, plush textured area rug, 5-tier brass & oak bookshelves with detailed books and ceramic vessels, indoor potted tree, and arched brass floor lamp.
-  - **Kitchen & Dining**: 3.6m Calacatta Gold waterfall marble island with undermount sink, brass gooseneck faucet, flush induction cooktop, 4 bouclé bar stools, trio of brass pendant globes, full-height pale oak cabinetry with built-in oven and fridge, grand 8-seater travertine dining table with full luxury place settings (gold chargers, porcelain dinnerware, linen napkins, crystal stemware, cutlery), centerpiece fruit bowl, and backlit glass-front wine display wall.
-- **Private Suites & Terrace Furnishings (Phase 4)**:
-  - **Master Bedroom Suite**: King bed with fluted bouclé headboard, brass border, 6 pillows, cashmere throw, two fluted oak nightstands with travertine table lamps, curved reading armchair with floor lamp, vanity desk with illuminated arched mirror and bouclé stool, floor-to-ceiling sheer architectural drapes framing the skyline windows, plush area rug, and wall art.
-  - **Walk-in Wardrobe**: Boutique open cabinetry with integrated LED strip lighting, brass hanging rails with tailored suits, coats, and dresses, 5-tier backlit angled shoe shelves with luxury footwear, central dressing island with marble top and smoked jewelry glass insert, and full-length backlit dressing mirror.
-  - **Master Bath & Spa**: Monolithic freestanding mineral resin soaking tub with floor-mounted brass filler tap, walk-in rain shower with frameless glass panel, ceiling-mounted brass rain head and marble shampoo niche, double vanity with dual undermount basins, brass faucets, dual backlit arched mirrors, rolled waffle towels, white orchid, wall-hung toilet, and high frosted privacy window.
-  - **Guest Bedroom Suite**: Double bed with fluted headboard, bedding, terracotta throw, nightstands with lamps, work desk with laptop, lamp, modernist desk chair, built-in wardrobe with brass handles, and gallery wall art.
-  - **Guest Powder Room**: Monolithic fluted stone basin vanity, wall-mounted brass faucet, tall backlit pill mirror, luxury reed fragrance diffuser, and wall-hung minimalist toilet.
-- **High-End Visuals, City, Atmosphere & QA (Phase 6)**:
-  - **Procedural City Skyline Outside Windows**:
-    - Over 200 high-rise metropolitan skyscrapers rendered via high-performance `InstancedMesh` with procedural window grid textures.
-    - Windows dynamically illuminate with warm amber glow during sunset and nighttime.
-    - Sinuous metropolitan river channel with reflective water and riverbank parkland promenade.
-    - Synchronized flashing red aircraft warning beacons atop the tallest skyline spires.
-    - Dynamic atmospheric horizon with drifting procedural cloud decks and a distant flock of circling birds.
-  - **Day / Sunset / Night Dynamic Atmosphere**:
-    - Seamlessly switch or cycle between **Day**, **Sunset**, and **Night** from the top-right HUD pill or Photo Mode.
-    - Dynamic directional sun/moon angle, color temperature, and shadow intensity lerping in real time.
-    - Dynamic atmospheric fog and sky backdrop adapting to each time of day.
-    - Automatic interior lamp, downlight, fireplace, and underwater pool illumination activation at sunset and night.
-  - **Procedural Studio Lighting & Environment (No External HDR)**:
-    - Drei `Environment` powered entirely by procedural `Lightformer` softbox panels and rim-light rings.
-    - Soft shadow maps tailored to each room's floor plan.
-    - Floating airborne dust motes in sunbeams with natural Brownian drift.
-  - **Cinematic Post-Processing Stack**:
-    - Built with `@react-three/postprocessing` (`Bloom`, `Vignette`, ACES Filmic tone mapping).
-    - Smooth architectural bloom with adaptive thresholds for day, sunset, and night.
-    - Automatically scaled or bypassed on low quality for maximum FPS stability.
-  - **Quality Presets (Low / Medium / High / Ultra)**:
-    - **Low**: Maximum performance mode; shadows disabled, post-processing bypassed, 1.0 DPR, simplified building geometry.
-    - **Medium** (Default): 1024 shadow map, bloom and vignette, 256 reflector resolution, adaptive DPR.
-    - **High**: 2048 shadow map, full post-processing, 512 reflector resolution, dust particles, 1.5 max DPR.
-    - **Ultra**: 2048 soft shadows, full post-processing stack, 512 reflector, 210 buildings, up to 2.0 max DPR.
-  - **Architectural Photo Mode**:
-    - Dedicated camera viewfinder mode with rule-of-thirds composition grid.
-    - Focal length (FOV) slider (45° telephoto to 95° wide angle).
-    - Shutter capture button that generates and downloads an instant high-resolution PNG screenshot (`the-skyline-penthouse-[time].png`).
-  - **Comprehensive Settings**:
-    - Mouse look sensitivity & mobile touch look sensitivity sliders.
-    - Field of view (FOV) slider (65° to 90°).
-    - Master volume slider and instant mute toggle (`M` key or UI).
-    - Head-bob animation toggle for motion sickness prevention.
-    - Fullscreen toggle button.
-- **Interactions & Sound Engine (Phase 5)**:
-  - **Procedural Web Audio API Synthesis Engine (Zero Audio Files)**:
-    - **Ambient Generative Jazz**: Warm electric piano / synth pad chords cycling through rich jazz voicings with soft filter sweeps.
-    - **Surface-Aware Footsteps**: Distinct sonic signatures for honed travertine/stone (crisp click + resonance), pale oak hardwood (warm mid-range thud), and bouclé carpets/rugs (soft muted step).
-    - **Door & Latch Audio**: Resonant wood clicks and sliding glass roller friction sounds.
-    - **Wind Gusts**: Filtered pink noise modulated with continuous natural breeze LFO when windows are opened.
-    - **Water Streams & Splashing**: Continuous synthesized water flow for vanity faucets, walk-in rain shower, and Jacuzzi spa.
-    - **Fireplace Crackle**: Warm low rumble with randomized high-passed snap/pop impulses.
-    - **Relaxation Breathing Audio**: Gentle rhythmic wave and harmonic swell when lying down on beds.
-    - **Master Audio Controls**: Volume slider (0-100%) in settings and quick one-key mute toggle (`M` key or UI).
-  - **Posture System (Sitting & Lying Down)**:
-    - **King Bed & Guest Bed**: Press `[E]` to smoothly lower camera onto the pillows looking up toward the ceiling with relaxing breathing audio; press `[E]`, `[Space]`, or movement keys to cleanly stand back up without physics clipping.
-    - **Seating**: Sit on the Bouclé Living Sectional Sofa, Kitchen Island Bar Stools, Terrace Teak Lounge, or Guest Desk Chair to lower camera to a relaxed seated eye height.
-  - **Interactive Windows & Curtains**:
-    - Openable sliding windows in Grand Living Gallery and Master Bedroom; tilt-open frosted privacy window in Master Bath.
-    - Breeze detection: opening windows activates wind audio and causes sheer curtains and indoor potted trees to flutter and sway.
-    - Curtains in Living Room and Master Bedroom can be drawn open or pulled closed with `[E]`.
-  - **Interactive Appliances & Architectural Fixtures**:
-    - **85" OLED TV**: Interactive power toggle playing dynamic real-time generative digital visuals on the display screen and casting variable ambient light.
-    - **Linear Fireplace**: Interactive power toggle with animated procedural flame meshes, flickering point light, and authentic fire crackling audio.
-    - **Induction Cooktop**: Interactive toggle activating 4 glowing radiant heating coils.
-    - **Refrigerator & Cabinetry**: French door refrigerator swings open to reveal interior cold white LED lighting, shelves, and chilled bottles; upper cabinets open to reveal stacked glassware.
-    - **Master & Powder Bathrooms**: Vanity faucets stream real-time water into basins with running audio; rain shower produces falling water droplets and rising steam mist; toilet lids toggle open/closed.
-    - **Terrace Jacuzzi**: Proximity sensor amplifies water ripples when walking near the rim; interactive spa jet controller activates bubbling aerated water.
-    - **Scene Lighting Panel**: Added to Pause Menu (`Esc`), allowing instant room-by-room light toggling as well as "Turn All On" and "Turn All Off" presets, paired with tactile brushed brass wall switches throughout every room.
-    - **Life Details**: Working wall clock on the media wall with moving second, minute, and hour hands synchronized to real time.
-- **Interactive Door System**:
-  - Reusable `<Door>` component supporting hinged swing doors and sliding glass doors.
-  - Rapier kinematic colliders that update seamlessly when doors open or close.
-  - Camera center raycast detection (2.4m range): crosshair expands with prompt `"[E] Open door"`.
-- **Navigation & Teleportation**:
-  - Tactical SVG **Mini-Map** in the bottom-left with player position dot and real-time vision cone.
-  - **Room Banner** that fades in smoothly upon entering new rooms.
-  - **Directory / Fast Travel** with smooth cinematic fade-to-black transitions.
-  - Default spawn in the Grand Living Gallery facing the skyline windows.
+[**🌐 Explore Live Demo**](https://your-project.vercel.app)
 
 ---
 
-## Getting Started Locally
+## Overview
+
+**The Skyline Penthouse** redefines architectural visualization on the web. Built with modern WebGL and physics, the player navigates an open-concept 280 m² luxury residence and a 105 m² private sky terrace in pure first-person perspective. The experience features real-time lighting transitions, interactive appliances, surface-aware procedural sound design, and an ivory travertine and bouclé aesthetic.
+
+The entire experience is **100% procedural in code**: zero external 3D models (GLB), zero external HDR skyboxes, zero image textures, and zero audio files. Everything is synthesized in real time in the client.
+
+---
+
+## Gallery
+
+<p align="center">
+  <img src="docs/gallery/grand-living.jpg" alt="Grand Living Gallery" width="49%">
+  &nbsp;
+  <img src="docs/gallery/sky-terrace.jpg" alt="Sky Terrace & Jacuzzi" width="49%">
+</p>
+
+*Concept images generated with AI. Final experience runs live in the browser.*
+
+---
+
+## Features
+
+- **Architectural Layout (~280 m² Interior + 105 m² Sky Terrace)**:
+  - **Grand Living Gallery** (11m × 8m): Floor-to-ceiling panoramic glass, bouclé L-sectional sofa, marble coffee table, curved armchairs, 85" OLED TV, grand piano, and linear fireplace.
+  - **Kitchen & Dining Pavilion** (6.5m × 8m): Waterfall Calacatta Gold marble island, flush induction cooktop, French-door refrigerator, backlit cabinetry, 8-seater travertine dining table, and wine display.
+  - **Private Sky Terrace & Jacuzzi** (17.5m × 6m): Recessed jacuzzi with animated bubbling water, outdoor teak lounge, 1.2m frameless glass railing, and panoramic city vistas.
+  - **Master Bedroom Suite** (8m × 6m): King bed with fluted bouclé headboard, sheer linen drapes, reading armchair, and illuminated vanity desk.
+  - **Walk-in Dressing Wardrobe** (4m × 5m): Boutique open wardrobes, brass garment rails, backlit shoe shelves, and central jewelry island.
+  - **Master Bath & Spa** (4m × 5m): Freestanding resin soaking tub, walk-in rain shower with steam mist, dual travertine vanities, and brass fixtures.
+  - **Guest Bedroom Suite** (7m × 4.5m): Modernist double bed, working desk with laptop, nightstands, and private closet.
+  - **Guest Powder Room** (3m × 3m): Monolithic travertine pedestal basin, brass wall-mounted tap, and backlit pill mirror.
+  - **Grand Entrance Foyer** (6m × 4.5m): Private elevator vestibule, marble console, round brass mirror, and ribbon bronze sculpture.
+  - **Gallery Hallway** (3m × 8m): Central connecting gallery with architectural arched portals.
+
+- **Interactive Physics & Architecture**:
+  - Reusable **Door System** with hinged swing doors and sliding terrace glass doors featuring dynamic Rapier kinematic colliders that update in real time.
+  - **Interactive Windows & Curtains**: Openable sliding windows that initiate ambient wind breezes, fluttering sheer curtains and indoor plants.
+  - **Posture Transitions**: Sit on sofas, bar stools, and terrace loungers; lie down on king and guest beds with smooth camera easing.
+  - **Interactive Appliances**: Toggle the 85" OLED TV with generative visuals, ignite the glowing linear fireplace, turn on kitchen cooktop coils, open refrigerator doors, run bathroom faucets, and activate the Jacuzzi spa jets.
+  - **Scene Lighting Panel**: Toggle room-by-room architectural downlights and lamps, or apply global presets from the pause menu or wall switches.
+
+- **Dynamic Atmosphere & Skyline (Phase 6)**:
+  - **Day / Sunset / Night Atmosphere**: Seamless real-time transitions for sun angle, color temperature, atmospheric fog, and automatic interior night illumination.
+  - **Procedural City Skyline**: 220+ instanced skyscrapers with emissive window grids that illuminate at night, curved metropolitan river, synchronized flashing red aviation spires, drifting procedural cumulus clouds, and distant circling birds.
+  - **Studio Lighting & Reflections**: Drei `Environment` powered by procedural `Lightformer` softboxes (zero external HDR) and real-time planar floor reflections via `MeshReflectorMaterial`.
+  - **Cinematic Post-Processing**: Luminance-threshold Bloom, Eskil vignette framing, and ACES Filmic tone mapping via `@react-three/postprocessing`.
+
+- **Procedural Web Audio API Synthesis Engine (Zero Audio Files)**:
+  - Generative electric piano ambient jazz chords with evolving low-pass filter sweeps.
+  - Surface-aware footstep audio (travertine stone click, hardwood oak thud, bouclé rug rustle).
+  - Physical interaction sounds: door latches, sliding glass wheels, wind gusts, running water streams, fireplace crackles, and relaxed breathing harmonics.
+  - Volume control and instant mute (`M` key).
+
+- **Architectural Photo Studio Mode**:
+  - Dedicated viewfinder mode (`P` key) with Rule-of-Thirds composition grid.
+  - Adjustable focal length (FOV 45° to 95°).
+  - One-click high-resolution PNG screenshot export.
+
+- **Performance & Adaptive Quality**:
+  - 4-Tier quality presets (**Low**, **Medium**, **High**, **Ultra**) scaling shadow resolution, pixel ratio (DPR), reflector passes, and post-processing.
+  - Full mobile optimization with virtual touch joystick and lookpad.
+
+---
+
+## Controls
+
+### Desktop Controls
+| Key / Input | Action |
+|---|---|
+| **W, A, S, D** / **Arrows** | Walk / Move in 3D space |
+| **Mouse Look** | Look around (Pointer Lock) |
+| **E** / **Left Click** | Interact (Doors, Windows, Appliances, Lights, Sit, Lie Down) |
+| **Shift** (Hold) | Sprint with dynamic FOV acceleration |
+| **Spacebar** | Jump / Stand up from bed or chair |
+| **C** | Toggle Crouch (lowers eye level to 1.0m) |
+| **P** | Toggle Architectural Photo Mode |
+| **M** | Toggle Audio Mute |
+| **Esc** | Pause Walkthrough & open Settings / Teleport / Lighting Menu |
+
+### Mobile Touch Controls
+| Control | Action |
+|---|---|
+| **Left Screen Region** | Floating Virtual Analog Joystick for movement |
+| **Right Screen Region** | Swipe / Drag to look around |
+| **Action Button** (✨) | Interact / Open doors / Use furniture |
+| **Jump Button** (↑) | Jump / Stand up |
+| **Crouch Button** (↓) | Toggle Crouch |
+| **Sprint Button** (🔥) | Sprint |
+| **Pause Button** (⚙️) | Open Pause & Settings Menu |
+
+---
+
+## Tech Stack
+
+- **Framework**: [Next.js 15](https://nextjs.org/) (App Router, Turbopack, React 19)
+- **Language**: [TypeScript](https://www.typescriptlang.org/)
+- **3D & Rendering**:
+  - [Three.js](https://threejs.org/)
+  - [@react-three/fiber](https://docs.pmnd.rs/react-three-fiber/)
+  - [@react-three/drei](https://github.com/pmndrs/drei)
+- **Physics**: [@react-three/rapier](https://github.com/pmndrs/react-three-rapier) (Kinematic colliders, raycasting)
+- **Post-Processing**: [@react-three/postprocessing](https://github.com/pmndrs/react-postprocessing)
+- **Audio Engine**: Custom procedural synthesizer built on native **Web Audio API**
+- **State Management**: [Zustand](https://github.com/pmndrs/zustand)
+- **UI & Motion**: [Framer Motion](https://www.framer.com/motion/), [Lucide React](https://lucide.dev/), [Tailwind CSS](https://tailwindcss.com/)
+
+---
+
+## Getting Started
 
 ### 1. Prerequisites
 - **Node.js**: `v18.18+` or `v20+` / `v22+` / `v24+`
@@ -124,10 +134,10 @@ Run the local Next.js development server:
 ```bash
 npm run dev
 ```
-Open [http://localhost:3000](http://localhost:3000) in your WebGL-capable browser.
+Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-### 4. Production Build & Verification
-To test the production build locally:
+### 4. Production Build
+Verify the production build locally:
 ```bash
 npm run build
 npm run start
@@ -135,52 +145,23 @@ npm run start
 
 ---
 
-## Controls
+## Deploy to Vercel
 
-### Desktop Controls
-| Input | Action |
-|---|---|
-| **W, A, S, D** / **Arrow Keys** | Walk / Move horizontally |
-| **Mouse Look** | Rotate camera (Pointer Lock) |
-| **E Key** / **Left Click** | Interact / Open & Close Doors |
-| **Shift** (Hold) | Sprint with dynamic FOV kick |
-| **Spacebar** | Jump / Step-up |
-| **C Key** | Crouch (lowers eye level to 1.0m) |
-| **Esc Key** | Pause Walkthrough & open menu |
+The project is pre-configured for zero-configuration deployment on **Vercel**:
 
-### Mobile Touch Controls
-| Control | Action |
-|---|---|
-| **Left Half of Screen** | Floating Virtual Analog Joystick for movement |
-| **Right Half of Screen** | Drag / Swipe to look around |
-| **Action Button** (Sparkles) | Open & Close Doors / Interact |
-| **Jump Button** (Arrow Up) | Jump |
-| **Crouch Button** (Arrow Down) | Toggle Crouch |
-| **Sprint Button** (Flame) | Sprint |
-| **Pause Button** (Top Right) | Open Pause & Settings Menu |
-
----
-
-## Vercel Deployment
-
-This project is built and optimized for seamless zero-configuration deployment on **Vercel**:
-
-### Option A: Deploy via GitHub (Recommended)
-1. Push this repository to GitHub:
+### Option A: Connect via GitHub (Recommended)
+1. Push your repository to GitHub:
    ```bash
    git push -u origin main
    ```
-2. Go to the [Vercel Dashboard](https://vercel.com/dashboard) and click **"Add New Project"**.
-3. Import the `penthouse` repository from your GitHub account.
-4. Framework Preset will automatically detect **Next.js**.
-5. Build Command: `npm run build`
-6. Output Directory: `.next`
-7. Click **"Deploy"**.
+2. Open your [Vercel Dashboard](https://vercel.com/dashboard) and click **"Add New Project"**.
+3. Import the `penthouse` repository.
+4. Next.js will be detected automatically. Click **"Deploy"**.
 
 ### Option B: Deploy via Vercel CLI
 ```bash
 npm i -g vercel
-vercel
+vercel --prod
 ```
 
 ---
@@ -189,66 +170,65 @@ vercel
 
 ```
 ├── app/
-│   ├── globals.css           # Global Tailwind CSS and luxury theme variables
-│   ├── layout.tsx            # Root layout with Cormorant Garamond & Inter fonts
-│   └── page.tsx              # Main entry page mounting PenthouseExperience
+│   ├── globals.css           # Global luxury theme tokens & Tailwind styles
+│   ├── layout.tsx            # Root layout with fonts, OpenGraph & Twitter metadata
+│   └── page.tsx              # Main entry page mounting client orchestrator
 ├── components/
 │   ├── canvas/
-│   │   └── PenthouseCanvas.tsx # WebGL R3F Canvas with Rapier physics engine
+│   │   ├── PenthouseCanvas.tsx       # WebGL R3F Canvas & physics world
+│   │   └── PostProcessingEffects.tsx # Bloom, Vignette, tone mapping
 │   ├── doors/
-│   │   └── Door.tsx           # Reusable hinged and sliding door with kinematic colliders
-│   ├── furniture/
-│   │   ├── foyer/
-│   │   │   └── FoyerFurniture.tsx # Console table, brass mirror, shoe cabinet, art piece
-│   │   ├── living/
-│   │   │   └── LivingFurniture.tsx# Sectional sofa, coffee table, armchairs, TV wall, piano
-│   │   ├── kitchen/
-│   │   │   └── KitchenDiningFurniture.tsx # Marble island, bar stools, dining set, wine wall
-│   │   ├── bedroom/
-│   │   │   └── MasterBedroomFurniture.tsx # King bed, nightstands, reading chair, vanity
-│   │   ├── wardrobe/
-│   │   │   └── WardrobeFurniture.tsx      # Open boutique cabinetry, rails, shoe shelves
-│   │   ├── bathroom/
-│   │   │   └── MasterBathroomFurniture.tsx# Freestanding tub, rain shower, double vanity
-│   │   ├── guest/
-│   │   │   └── GuestBedroomFurniture.tsx  # Double bed, nightstands, desk, wardrobe
-│   │   ├── powder/
-│   │   │   └── PowderRoomFurniture.tsx    # Monolithic stone basin, toilet, mirror
-│   │   └── terrace/
-│   │       └── TerraceFurniture.tsx       # Outdoor lounge, planters, animated Jacuzzi water
+│   │   └── Door.tsx                  # Kinematic hinged & sliding doors
+│   ├── environment/
+│   │   ├── AtmosphericLighting.tsx   # Day/Sunset/Night sun & Drei Lightformers
+│   │   └── CitySkyline.tsx           # Instanced skyscrapers, river, clouds, birds
+│   ├── furniture/                    # 10 fully furnished room components
+│   │   ├── foyer/FoyerFurniture.tsx
+│   │   ├── living/LivingFurniture.tsx
+│   │   ├── kitchen/KitchenDiningFurniture.tsx
+│   │   ├── bedroom/MasterBedroomFurniture.tsx
+│   │   ├── wardrobe/WardrobeFurniture.tsx
+│   │   ├── bathroom/MasterBathroomFurniture.tsx
+│   │   ├── guest/GuestBedroomFurniture.tsx
+│   │   ├── powder/PowderRoomFurniture.tsx
+│   │   └── terrace/TerraceFurniture.tsx
 │   ├── interaction/
-│   │   └── InteractionManager.tsx # Raycaster interaction detection system
+│   │   └── InteractionManager.tsx    # Center-camera raycaster
 │   ├── intro/
-│   │   └── IntroOverlay.tsx   # Cinematic title, loading bar & controls guide
+│   │   └── IntroOverlay.tsx          # Cinematic title & loading screen
 │   ├── mobile/
-│   │   └── MobileControls.tsx # Touch joystick, touch-drag look & action buttons
+│   │   └── MobileControls.tsx        # Virtual analog joystick & lookpad
 │   ├── navigation/
-│   │   ├── MiniMap.tsx        # Bottom-left SVG tactical floor plan & vision cone
-│   │   ├── RoomBanner.tsx     # Top room label banner that fades in on entry
-│   │   └── TeleportMenu.tsx   # Fast travel directory with fade-to-black overlay
+│   │   ├── MiniMap.tsx               # Tactical SVG floor plan with vision cone
+│   │   ├── RoomBanner.tsx            # Animated room entry label
+│   │   └── TeleportMenu.tsx          # Directory fast-travel overlay
 │   ├── player/
-│   │   └── Player.tsx         # Rapier capsule physics, camera sync, head bob & crouch
+│   │   └── Player.tsx                # Rapier capsule physics, crouch & head bob
 │   ├── room/
-│   │   └── PenthouseShell.tsx # Full 10-room architectural layout, reflective floor, terrace
-│   ├── ui/
-│   │   └── HUD.tsx            # Dynamic crosshair dot, pause menu & WebGL fallback modal
-│   └── PenthouseExperience.tsx# Dynamic client orchestrator (SSR: false)
+│   │   └── PenthouseShell.tsx        # Physical walls, travertine floors, windows
+│   └── ui/
+│       ├── HUD.tsx                   # Crosshair, pause menu, time toggle, quality
+│       └── PhotoModeOverlay.tsx      # Composition grid & PNG screenshot exporter
+├── docs/
+│   ├── banner.png                    # 1600x640 luxury banner for GitHub README
+│   ├── banner-raw.png                # High-res raw banner
+│   └── gallery/                      # Gallery images for README
 ├── hooks/
-│   ├── useDeviceDetect.ts     # Touch device auto-detection hook
-│   └── useKeyboardControls.ts # Desktop keyboard event listener & pause binder
+│   ├── useDeviceDetect.ts            # Touch device detection
+│   └── useKeyboardControls.ts        # Keyboard shortcut bindings
 ├── lib/
-│   ├── config.ts              # Single source of truth for architectural dimensions
-│   └── materials.ts           # Procedural canvas textures (Calacatta, oak, bouclé, books)
+│   ├── audio.ts                      # Procedural Web Audio API sound engine
+│   ├── config.ts                     # Single source of truth for architectural dimensions
+│   └── materials.ts                  # Procedural canvas textures
+├── public/
+│   └── og-banner.png                 # 1200x630 social sharing card
 ├── store/
-│   └── useGameStore.ts        # Zustand store for game state, device, and controls
-├── next.config.mjs            # Next.js transpile packages configuration
-├── tailwind.config.ts         # Tailwind CSS luxury theme palette configuration
-├── tsconfig.json              # TypeScript compiler configuration
-└── package.json               # Dependencies and build scripts
+│   └── useGameStore.ts               # Zustand store for world, player & UI state
+└── package.json
 ```
 
 ---
 
 ## License
 
-Private & Proprietary — The Skyline Penthouse Architectural Walkthrough.
+Private & Proprietary — The Skyline Penthouse. Built for high-performance interactive architectural visualization.
