@@ -14,6 +14,9 @@ import {
   Compass,
   AlertTriangle,
   Hand,
+  Lightbulb,
+  Volume2,
+  VolumeX,
 } from 'lucide-react';
 
 interface HUDProps {
@@ -26,14 +29,23 @@ export const HUD: React.FC<HUDProps> = ({ onRequestPointerLock }) => {
   const isMobile = useGameStore((s) => s.isMobile);
   const webGlSupported = useGameStore((s) => s.webGlSupported);
   const activeInteractable = useGameStore((s) => s.activeInteractable);
+  const posture = useGameStore((s) => s.posture);
+  const exitSitting = useGameStore((s) => s.exitSitting);
+  const exitLying = useGameStore((s) => s.exitLying);
 
   const resumeGame = useGameStore((s) => s.resumeGame);
   const exitToIntro = useGameStore((s) => s.exitToIntro);
   const triggerTeleport = useGameStore((s) => s.triggerTeleport);
   const settings = useGameStore((s) => s.settings);
   const updateSettings = useGameStore((s) => s.updateSettings);
+  const setVolume = useGameStore((s) => s.setVolume);
+  const toggleMute = useGameStore((s) => s.toggleMute);
 
-  const [activeTab, setActiveTab] = useState<'menu' | 'teleport' | 'controls' | 'settings'>('menu');
+  const lightingStates = useGameStore((s) => s.lightingStates);
+  const toggleRoomLight = useGameStore((s) => s.toggleRoomLight);
+  const setAllLights = useGameStore((s) => s.setAllLights);
+
+  const [activeTab, setActiveTab] = useState<'menu' | 'lighting' | 'teleport' | 'controls' | 'settings'>('menu');
 
   const rooms = Object.values(ARCHITECTURE_CONFIG.rooms);
 
@@ -56,6 +68,14 @@ export const HUD: React.FC<HUDProps> = ({ onRequestPointerLock }) => {
     triggerTeleport(pos, yaw);
     if (!isMobile) {
       onRequestPointerLock();
+    }
+  };
+
+  const handleStandUp = () => {
+    if (posture === 'sitting') {
+      exitSitting();
+    } else if (posture === 'lying') {
+      exitLying();
     }
   };
 
@@ -86,7 +106,7 @@ export const HUD: React.FC<HUDProps> = ({ onRequestPointerLock }) => {
       )}
 
       {/* -------------------- 2. DYNAMIC INTERACTIVE CROSSHAIR & PROMPT -------------------- */}
-      {isStarted && !isPaused && !isMobile && (
+      {isStarted && !isPaused && !isMobile && posture === 'standing' && (
         <div className="fixed inset-0 pointer-events-none z-30 flex items-center justify-center">
           <div className="relative flex flex-col items-center justify-center">
             {/* Center Crosshair Dot / Focus Ring */}
@@ -140,6 +160,33 @@ export const HUD: React.FC<HUDProps> = ({ onRequestPointerLock }) => {
         </div>
       )}
 
+      {/* -------------------- 2B. POSTURE EXIT PROMPT (SEATED / LYING) -------------------- */}
+      {isStarted && !isPaused && posture !== 'standing' && (
+        <div className="fixed bottom-12 inset-x-0 z-30 flex justify-center pointer-events-auto">
+          <motion.button
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 20 }}
+            onClick={handleStandUp}
+            className="flex items-center gap-3 px-5 py-2.5 rounded-full bg-[#1F1E1B]/90 backdrop-blur-md border border-[#C5A059] text-white shadow-2xl cursor-pointer hover:bg-[#2A2722] transition-colors"
+          >
+            <span className="text-xs font-medium tracking-wider uppercase text-[#E8DFD1]">
+              {posture === 'sitting' ? 'Seated Comfortably' : 'Lying Down in Suite'}
+            </span>
+            <div className="flex items-center gap-1.5">
+              <kbd className="px-2 py-0.5 rounded bg-[#C5A059] text-[#1E1B15] font-mono text-xs font-bold shadow-sm">
+                E
+              </kbd>
+              <span className="text-xs text-neutral-400">or</span>
+              <kbd className="px-2 py-0.5 rounded bg-[#C5A059] text-[#1E1B15] font-mono text-xs font-bold shadow-sm">
+                Space
+              </kbd>
+              <span className="text-xs text-[#FAF8F3] ml-1">Stand Up</span>
+            </div>
+          </motion.button>
+        </div>
+      )}
+
       {/* -------------------- 3. NAVIGATION UI ELEMENTS -------------------- */}
       <RoomBanner />
       <MiniMap />
@@ -159,10 +206,10 @@ export const HUD: React.FC<HUDProps> = ({ onRequestPointerLock }) => {
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.94, opacity: 0, y: 15 }}
               transition={{ duration: 0.25, ease: 'easeOut' }}
-              className="relative max-w-md w-full rounded-3xl bg-[#FAF8F3]/95 border border-[#C5A059]/40 shadow-2xl overflow-hidden p-6 text-neutral-800"
+              className="relative max-w-lg w-full rounded-3xl bg-[#FAF8F3]/95 border border-[#C5A059]/40 shadow-2xl overflow-hidden p-6 text-neutral-800"
             >
               {/* Header */}
-              <div className="text-center pb-4 border-b border-[#E8DFD1]">
+              <div className="text-center pb-3 border-b border-[#E8DFD1]">
                 <span className="text-[11px] font-mono tracking-[0.25em] text-[#8C7443] uppercase">
                   Walkthrough Paused
                 </span>
@@ -172,18 +219,18 @@ export const HUD: React.FC<HUDProps> = ({ onRequestPointerLock }) => {
               </div>
 
               {/* Navigation Tabs */}
-              <div className="flex border-b border-[#E8DFD1] my-3.5 text-xs">
-                {(['menu', 'teleport', 'controls', 'settings'] as const).map((tab) => (
+              <div className="flex border-b border-[#E8DFD1] my-3 text-xs overflow-x-auto">
+                {(['menu', 'lighting', 'teleport', 'controls', 'settings'] as const).map((tab) => (
                   <button
                     key={tab}
                     onClick={() => setActiveTab(tab)}
-                    className={`flex-1 py-2 font-medium tracking-wider uppercase border-b-2 transition-colors cursor-pointer ${
+                    className={`flex-1 min-w-[70px] py-2 font-medium tracking-wider uppercase border-b-2 transition-colors cursor-pointer ${
                       activeTab === tab
                         ? 'border-[#C5A059] text-[#8C7443]'
                         : 'border-transparent text-neutral-400 hover:text-neutral-600'
                     }`}
                   >
-                    {tab}
+                    {tab === 'lighting' ? 'Lighting' : tab}
                   </button>
                 ))}
               </div>
@@ -200,6 +247,14 @@ export const HUD: React.FC<HUDProps> = ({ onRequestPointerLock }) => {
                   </button>
 
                   <button
+                    onClick={() => setActiveTab('lighting')}
+                    className="w-full py-3 px-4 rounded-xl bg-[#FFFDF9] border border-[#DDD3C3] text-[#4A453B] font-medium text-xs tracking-wider uppercase flex items-center justify-center gap-2 hover:bg-[#F3EFE6] transition-colors cursor-pointer"
+                  >
+                    <Lightbulb className="w-4 h-4 text-[#8C7443]" />
+                    Scene Lighting Panel
+                  </button>
+
+                  <button
                     onClick={() => setActiveTab('teleport')}
                     className="w-full py-3 px-4 rounded-xl bg-[#FFFDF9] border border-[#DDD3C3] text-[#4A453B] font-medium text-xs tracking-wider uppercase flex items-center justify-center gap-2 hover:bg-[#F3EFE6] transition-colors cursor-pointer"
                   >
@@ -212,7 +267,7 @@ export const HUD: React.FC<HUDProps> = ({ onRequestPointerLock }) => {
                     className="w-full py-3 px-4 rounded-xl bg-[#FFFDF9] border border-[#DDD3C3] text-[#4A453B] font-medium text-xs tracking-wider uppercase flex items-center justify-center gap-2 hover:bg-[#F3EFE6] transition-colors cursor-pointer"
                   >
                     <Keyboard className="w-4 h-4 text-[#8C7443]" />
-                    Controls Guide
+                    Controls & Audio Guide
                   </button>
 
                   <button
@@ -225,7 +280,71 @@ export const HUD: React.FC<HUDProps> = ({ onRequestPointerLock }) => {
                 </div>
               )}
 
-              {/* TAB 2: FAST TRAVEL IN PAUSE */}
+              {/* TAB 2: SCENE LIGHTING PANEL */}
+              {activeTab === 'lighting' && (
+                <div className="pt-1 space-y-3">
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setAllLights(true)}
+                      className="flex-1 py-2 px-3 rounded-lg bg-[#FAF4E6] border border-[#C5A059] text-[#8C7443] font-semibold text-xs tracking-wider uppercase cursor-pointer hover:bg-[#F5EDD6] transition-colors"
+                    >
+                      Turn All On
+                    </button>
+                    <button
+                      onClick={() => setAllLights(false)}
+                      className="flex-1 py-2 px-3 rounded-lg bg-[#ECE7DC] border border-[#DDD3C3] text-[#5A5448] font-semibold text-xs tracking-wider uppercase cursor-pointer hover:bg-[#E2DCCF] transition-colors"
+                    >
+                      Turn All Off
+                    </button>
+                  </div>
+
+                  <div className="max-h-[220px] overflow-y-auto space-y-1.5 pr-1">
+                    {Object.entries({
+                      living: 'Grand Living Gallery',
+                      kitchen_dining: 'Kitchen & Dining Pavilion',
+                      terrace: 'Private Sky Terrace',
+                      hallway: 'Gallery Hallway',
+                      master_bedroom: 'Master Bedroom Suite',
+                      wardrobe: 'Walk-in Wardrobe',
+                      master_bathroom: 'Master Bath & Spa',
+                      powder_room: 'Guest Powder Room',
+                      guest_bedroom: 'Guest Bedroom Suite',
+                      foyer: 'Entrance Foyer',
+                    }).map(([key, name]) => {
+                      const isOn = lightingStates[key] ?? true;
+                      return (
+                        <div
+                          key={key}
+                          className="flex items-center justify-between p-2 rounded-xl bg-[#FFFDF9] border border-[#E8DFD1]"
+                        >
+                          <span className="text-xs font-serif text-[#2D2A26] font-medium">
+                            {name}
+                          </span>
+                          <button
+                            onClick={() => toggleRoomLight(key)}
+                            className={`px-3 py-1 rounded-full text-[10px] font-mono uppercase tracking-wider font-semibold cursor-pointer transition-colors ${
+                              isOn
+                                ? 'bg-[#D4AF37] text-white shadow-sm'
+                                : 'bg-[#E5DFD4] text-[#7A7469]'
+                            }`}
+                          >
+                            {isOn ? 'ON' : 'OFF'}
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  <button
+                    onClick={() => setActiveTab('menu')}
+                    className="w-full mt-2 py-2 rounded-lg bg-[#EFECE1] text-[#4A453B] font-medium text-xs uppercase cursor-pointer"
+                  >
+                    Back to Actions
+                  </button>
+                </div>
+              )}
+
+              {/* TAB 3: FAST TRAVEL IN PAUSE */}
               {activeTab === 'teleport' && (
                 <div className="pt-1 max-h-[300px] overflow-y-auto space-y-2 pr-1">
                   {rooms.map((room) => (
@@ -249,43 +368,43 @@ export const HUD: React.FC<HUDProps> = ({ onRequestPointerLock }) => {
                 </div>
               )}
 
-              {/* TAB 3: CONTROLS GUIDE */}
+              {/* TAB 4: CONTROLS GUIDE */}
               {activeTab === 'controls' && (
                 <div className="pt-1 text-xs space-y-2 text-[#545046]">
                   <div className="flex justify-between items-center py-1.5 border-b border-[#ECE7DC]">
-                    <span>Walk</span>
+                    <span>Walk / Explore</span>
                     <span className="font-mono bg-[#EFECE1] px-2 py-0.5 rounded border border-[#DDD3C3]">
                       W, A, S, D / Arrows
                     </span>
                   </div>
                   <div className="flex justify-between items-center py-1.5 border-b border-[#ECE7DC]">
-                    <span>Interact with Doors</span>
+                    <span>Interact / Sit / Lie Down</span>
                     <span className="font-mono bg-[#EFECE1] px-2 py-0.5 rounded border border-[#DDD3C3]">
-                      E Key / Click / Tap
+                      E Key / Click
                     </span>
                   </div>
                   <div className="flex justify-between items-center py-1.5 border-b border-[#ECE7DC]">
-                    <span>Sprint</span>
+                    <span>Stand Up (from Bed/Sofa)</span>
+                    <span className="font-mono bg-[#EFECE1] px-2 py-0.5 rounded border border-[#DDD3C3]">
+                      E / Spacebar / WASD
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center py-1.5 border-b border-[#ECE7DC]">
+                    <span>Quick Mute Music & Audio</span>
+                    <span className="font-mono bg-[#EFECE1] px-2 py-0.5 rounded border border-[#DDD3C3]">
+                      M Key
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center py-1.5 border-b border-[#ECE7DC]">
+                    <span>Sprint / Fast Stroll</span>
                     <span className="font-mono bg-[#EFECE1] px-2 py-0.5 rounded border border-[#DDD3C3]">
                       Hold Shift
                     </span>
                   </div>
                   <div className="flex justify-between items-center py-1.5 border-b border-[#ECE7DC]">
-                    <span>Jump</span>
+                    <span>Jump / Crouch</span>
                     <span className="font-mono bg-[#EFECE1] px-2 py-0.5 rounded border border-[#DDD3C3]">
-                      Spacebar
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center py-1.5 border-b border-[#ECE7DC]">
-                    <span>Crouch</span>
-                    <span className="font-mono bg-[#EFECE1] px-2 py-0.5 rounded border border-[#DDD3C3]">
-                      C Key
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center py-1.5">
-                    <span>Pause Menu</span>
-                    <span className="font-mono bg-[#EFECE1] px-2 py-0.5 rounded border border-[#DDD3C3]">
-                      Esc
+                      Space / C Key
                     </span>
                   </div>
                   <button
@@ -297,9 +416,48 @@ export const HUD: React.FC<HUDProps> = ({ onRequestPointerLock }) => {
                 </div>
               )}
 
-              {/* TAB 4: SETTINGS */}
+              {/* TAB 5: SETTINGS */}
               {activeTab === 'settings' && (
                 <div className="pt-1 text-xs space-y-3.5 text-[#545046]">
+                  {/* Master Volume */}
+                  <div>
+                    <div className="flex justify-between items-center mb-1.5">
+                      <div className="flex items-center gap-1.5 font-medium">
+                        {settings.isMuted ? (
+                          <VolumeX className="w-4 h-4 text-red-500" />
+                        ) : (
+                          <Volume2 className="w-4 h-4 text-[#8C7443]" />
+                        )}
+                        <span>Master Volume</span>
+                      </div>
+                      <span className="font-mono font-semibold text-[#8C7443]">
+                        {settings.isMuted ? 'Muted' : `${Math.round(settings.volume * 100)}%`}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <input
+                        type="range"
+                        min="0"
+                        max="1"
+                        step="0.05"
+                        value={settings.volume}
+                        disabled={settings.isMuted}
+                        onChange={(e) => setVolume(parseFloat(e.target.value))}
+                        className="w-full accent-[#C5A059] cursor-pointer disabled:opacity-40"
+                      />
+                      <button
+                        onClick={toggleMute}
+                        className={`px-2.5 py-1 rounded text-[11px] font-mono uppercase font-bold cursor-pointer transition-colors ${
+                          settings.isMuted
+                            ? 'bg-red-100 text-red-700 border border-red-300'
+                            : 'bg-[#EFECE1] text-[#545046] border border-[#DDD3C3]'
+                        }`}
+                      >
+                        {settings.isMuted ? 'Unmute' : 'Mute'}
+                      </button>
+                    </div>
+                  </div>
+
                   <div>
                     <div className="flex justify-between mb-1.5">
                       <span className="font-medium">Look Sensitivity</span>

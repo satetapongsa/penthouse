@@ -5,6 +5,7 @@ import * as THREE from 'three';
 import { RigidBody, CuboidCollider } from '@react-three/rapier';
 import { MeshReflectorMaterial } from '@react-three/drei';
 import { ARCHITECTURE_CONFIG } from '@/lib/config';
+import { useGameStore } from '@/store/useGameStore';
 import { Door } from '@/components/doors/Door';
 import { FoyerFurniture } from '@/components/furniture/foyer/FoyerFurniture';
 import { LivingFurniture } from '@/components/furniture/living/LivingFurniture';
@@ -77,6 +78,9 @@ export const PenthouseShell: React.FC = () => {
   const ceilingH = ARCHITECTURE_CONFIG.ceilingHeight; // 3.4m
   const halfCeiling = ceilingH / 2; // 1.7m
   const wallThick = ARCHITECTURE_CONFIG.wallThickness; // 0.22m
+
+  const lightingStates = useGameStore((s) => s.lightingStates);
+  const toggleRoomLight = useGameStore((s) => s.toggleRoomLight);
 
   // Procedural Travertine Tile Texture for indoor floors
   const travertineTexture = useMemo(() => {
@@ -169,12 +173,84 @@ export const PenthouseShell: React.FC = () => {
         shadow-bias={-0.0001}
       />
 
-      {/* Warm Ambient Downlights across main zones */}
-      <pointLight position={[2.0, ceilingH - 0.2, -2.0]} color="#FFF3DD" intensity={1.2} distance={10} />
-      <pointLight position={[10.5, ceilingH - 0.2, -2.0]} color="#FFF3DD" intensity={1.0} distance={9} />
-      <pointLight position={[-10.5, ceilingH - 0.2, -3.0]} color="#FFF3DD" intensity={1.1} distance={9} />
-      <pointLight position={[-0.5, ceilingH - 0.2, 4.0]} color="#FFF3DD" intensity={0.9} distance={7} />
-      <pointLight position={[6.0, ceilingH - 0.2, 4.25]} color="#FFF3DD" intensity={0.9} distance={8} />
+      {/* Warm Ambient Downlights across main zones (dynamically toggled per zone) */}
+      {lightingStates.living && (
+        <pointLight position={[2.0, ceilingH - 0.2, -2.0]} color="#FFF3DD" intensity={1.2} distance={10} />
+      )}
+      {lightingStates.kitchen_dining && (
+        <pointLight position={[10.5, ceilingH - 0.2, -2.0]} color="#FFF3DD" intensity={1.0} distance={9} />
+      )}
+      {lightingStates.master_bedroom && (
+        <pointLight position={[-10.5, ceilingH - 0.2, -3.0]} color="#FFF3DD" intensity={1.1} distance={9} />
+      )}
+      {lightingStates.master_bathroom && (
+        <pointLight position={[-8.5, ceilingH - 0.2, 2.5]} color="#FFF3DD" intensity={1.0} distance={7} />
+      )}
+      {lightingStates.wardrobe && (
+        <pointLight position={[-12.5, ceilingH - 0.2, 2.5]} color="#FFF3DD" intensity={0.9} distance={7} />
+      )}
+      {lightingStates.foyer && (
+        <pointLight position={[-0.5, ceilingH - 0.2, 4.0]} color="#FFF3DD" intensity={0.9} distance={7} />
+      )}
+      {lightingStates.guest_bedroom && (
+        <pointLight position={[6.0, ceilingH - 0.2, 4.25]} color="#FFF3DD" intensity={0.9} distance={8} />
+      )}
+      {lightingStates.hallway && (
+        <pointLight position={[-5.0, ceilingH - 0.2, -2.0]} color="#FFF3DD" intensity={0.9} distance={8} />
+      )}
+      {lightingStates.powder_room && (
+        <pointLight position={[-5.0, ceilingH - 0.2, 3.5]} color="#FFF3DD" intensity={0.8} distance={6} />
+      )}
+
+      {/* Foyer Wall Light Switch */}
+      <group
+        position={[0.3, 1.35, 6.42]}
+        rotation={[0, Math.PI, 0]}
+        userData={{
+          interactable: true,
+          interactableId: 'foyer-light-switch',
+          label: lightingStates.foyer ? 'Turn Off Foyer Lights' : 'Turn On Foyer Lights',
+          onInteract: () => toggleRoomLight('foyer'),
+        }}
+      >
+        <mesh castShadow>
+          <boxGeometry args={[0.08, 0.12, 0.015]} />
+          <meshStandardMaterial color={colors.brassTrim} metalness={0.9} roughness={0.2} />
+        </mesh>
+        <mesh position={[0, 0, 0.01]}>
+          <boxGeometry args={[0.025, 0.045, 0.01]} />
+          <meshStandardMaterial color="#FFFFFF" roughness={0.2} />
+        </mesh>
+        <mesh position={[0, 0.035, 0.01]}>
+          <circleGeometry args={[0.004, 16]} />
+          <meshBasicMaterial color={lightingStates.foyer ? '#4ADE80' : '#E5E7EB'} />
+        </mesh>
+      </group>
+
+      {/* Hallway Wall Light Switch */}
+      <group
+        position={[-6.42, 1.35, -2.0]}
+        rotation={[0, Math.PI / 2, 0]}
+        userData={{
+          interactable: true,
+          interactableId: 'hallway-light-switch',
+          label: lightingStates.hallway ? 'Turn Off Hallway Lights' : 'Turn On Hallway Lights',
+          onInteract: () => toggleRoomLight('hallway'),
+        }}
+      >
+        <mesh castShadow>
+          <boxGeometry args={[0.08, 0.12, 0.015]} />
+          <meshStandardMaterial color={colors.brassTrim} metalness={0.9} roughness={0.2} />
+        </mesh>
+        <mesh position={[0, 0, 0.01]}>
+          <boxGeometry args={[0.025, 0.045, 0.01]} />
+          <meshStandardMaterial color="#FFFFFF" roughness={0.2} />
+        </mesh>
+        <mesh position={[0, 0.035, 0.01]}>
+          <circleGeometry args={[0.004, 16]} />
+          <meshBasicMaterial color={lightingStates.hallway ? '#4ADE80' : '#E5E7EB'} />
+        </mesh>
+      </group>
 
       {/* -------------------- 2. FLOORS & CEILINGS -------------------- */}
       {/* Indoor Main Floor Slab (X: -14.5 to 14.0, Z: -6.0 to 6.5) */}

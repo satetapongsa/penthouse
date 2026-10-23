@@ -23,6 +23,7 @@ export function useKeyboardControls() {
   const setControl = useGameStore((s) => s.setControl);
   const pauseGame = useGameStore((s) => s.pauseGame);
   const resumeGame = useGameStore((s) => s.resumeGame);
+  const toggleMute = useGameStore((s) => s.toggleMute);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -44,6 +45,13 @@ export function useKeyboardControls() {
             pauseGame();
           }
         }
+        return;
+      }
+
+      // 'M' key toggles mute
+      if (e.code === 'KeyM') {
+        e.preventDefault();
+        toggleMute();
         return;
       }
 
@@ -83,5 +91,5 @@ export function useKeyboardControls() {
       window.removeEventListener('keyup', handleKeyUp);
       window.removeEventListener('blur', handleBlur);
     };
-  }, [isStarted, isPaused, setControl, pauseGame, resumeGame]);
+  }, [isStarted, isPaused, setControl, pauseGame, resumeGame, toggleMute]);
 }

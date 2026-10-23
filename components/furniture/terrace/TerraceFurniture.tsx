@@ -5,26 +5,38 @@ import * as THREE from 'three';
 import { useFrame } from '@react-three/fiber';
 import { RigidBody, CuboidCollider } from '@react-three/rapier';
 import { LUXURY_PALETTE } from '@/lib/materials';
+import { useGameStore } from '@/store/useGameStore';
 
 export const TerraceFurniture: React.FC = () => {
   const colors = LUXURY_PALETTE.colors;
   const waterMeshRef = useRef<THREE.Mesh>(null);
   const waterGeomRef = useRef<THREE.PlaneGeometry>(null);
 
+  const enterSitting = useGameStore((s) => s.enterSitting);
+  const isNearJacuzzi = useGameStore((s) => s.isNearJacuzzi);
+  const jacuzziJetsOn = useGameStore((s) => s.jacuzziJetsOn);
+  const toggleJacuzziJets = useGameStore((s) => s.toggleJacuzziJets);
+  const isTerraceLightOn = useGameStore((s) => s.lightingStates.terrace ?? true);
+
   // Animated procedural water surface displacement inside the Jacuzzi basin
   useFrame(({ clock }) => {
     if (!waterGeomRef.current) return;
-    const time = clock.getElapsedTime() * 1.8;
+
+    // Fast active ripples when player is near or when jets are turned on
+    const isActive = isNearJacuzzi || jacuzziJetsOn;
+    const speedMult = isActive ? 3.4 : 1.4;
+    const ampMult = isActive ? 1.8 : 0.9;
+
+    const time = clock.getElapsedTime() * speedMult;
     const posAttr = waterGeomRef.current.attributes.position;
 
     for (let i = 0; i < posAttr.count; i++) {
       const u = posAttr.getX(i);
       const v = posAttr.getY(i);
-      // Dual overlapping sine waves for realistic gentle ripples
       const z =
-        Math.sin(u * 2.8 + time * 1.6) * 0.025 +
-        Math.cos(v * 3.2 + time * 1.4) * 0.02 +
-        Math.sin((u + v) * 2.0 + time * 2.2) * 0.015;
+        (Math.sin(u * 2.8 + time * 1.6) * 0.025 +
+         Math.cos(v * 3.2 + time * 1.4) * 0.02 +
+         Math.sin((u + v) * 2.2 + time * 2.0) * 0.015) * ampMult;
       posAttr.setZ(i, z);
     }
     posAttr.needsUpdate = true;
@@ -34,7 +46,6 @@ export const TerraceFurniture: React.FC = () => {
   return (
     <group>
       {/* -------------------- 1. ANIMATED JACUZZI POOL WATER SURFACE -------------------- */}
-      {/* Inside Jacuzzi Basin: Center = [10.75, 0.38, -9.5], Width = 3.8m, Depth = 3.3m */}
       <group position={[10.75, 0.38, -9.5]}>
         {/* Animated Ripple Water Mesh */}
         <mesh
@@ -59,22 +70,55 @@ export const TerraceFurniture: React.FC = () => {
         <pointLight
           position={[0, -0.15, 0]}
           color="#38D7F5"
-          intensity={1.6}
+          intensity={jacuzziJetsOn ? 2.4 : 1.6}
           distance={5.5}
           decay={2}
         />
+
         {/* Jacuzzi Spa Bubble Jets Accents */}
         {[-1.2, -0.4, 0.4, 1.2].map((jx) => (
           <mesh key={`jet-${jx}`} position={[jx, -0.02, 0]}>
-            <circleGeometry args={[0.08, 16]} />
-            <meshBasicMaterial color="#E0F8FF" transparent opacity={0.6} />
+            <circleGeometry args={[jacuzziJetsOn ? 0.14 : 0.08, 16]} />
+            <meshBasicMaterial color="#E0F8FF" transparent opacity={jacuzziJetsOn ? 0.9 : 0.6} />
           </mesh>
         ))}
+
+        {/* Interactive Rim Jet Controller */}
+        <group
+          position={[-1.95, 0.18, 0]}
+          userData={{
+            interactable: true,
+            interactableId: 'terrace-jacuzzi-jets',
+            label: jacuzziJetsOn ? 'Stop Jacuzzi Jets' : 'Start Jacuzzi Jets',
+            onInteract: toggleJacuzziJets,
+          }}
+        >
+          <mesh castShadow>
+            <cylinderGeometry args={[0.06, 0.06, 0.02, 16]} />
+            <meshStandardMaterial color={colors.brass} metalness={0.9} roughness={0.2} />
+          </mesh>
+        </group>
       </group>
 
-      {/* -------------------- 2. OUTDOOR LUXURY LOUNGE SECTIONAL SOFA -------------------- */}
-      {/* Positioned on West terrace deck (X = 0.5, Z = -9.2) */}
-      <group position={[0.5, 0, -9.2]}>
+      {/* -------------------- 2. OUTDOOR LOUNGE SECTIONAL (INTERACTIVE SIT) -------------------- */}
+      <group
+        position={[0.5, 0, -9.2]}
+        userData={{
+          interactable: true,
+          interactableId: 'terrace-lounge',
+          label: 'Sit on Terrace Lounge',
+          onInteract: () => {
+            enterSitting({
+              position: [0.5, 0, -8.4],
+              eyeHeight: 0.96,
+              pitch: -0.05,
+              yaw: 0,
+              returnPosition: [0.5, 1.8, -7.0],
+              returnYaw: 0,
+            });
+          },
+        }}
+      >
         <RigidBody type="fixed" colliders={false}>
           <CuboidCollider args={[1.6, 0.4, 0.5]} position={[0, 0.4, 0.8]} />
           <CuboidCollider args={[0.5, 0.4, 0.9]} position={[-1.1, 0.4, -0.3]} />
@@ -89,13 +133,12 @@ export const TerraceFurniture: React.FC = () => {
           <boxGeometry args={[3.2, 0.36, 0.2]} />
           <meshStandardMaterial color="#B09E8B" roughness={0.7} />
         </mesh>
-        {/* Left Return Chaise */}
         <mesh position={[-1.1, 0.18, -0.3]} castShadow receiveShadow>
           <boxGeometry args={[1.0, 0.36, 1.8]} />
           <meshStandardMaterial color="#B09E8B" roughness={0.7} />
         </mesh>
 
-        {/* Weatherproof Ivory Linen Cushions */}
+        {/* Ivory Cushions */}
         <mesh position={[0, 0.38, 0.8]} castShadow receiveShadow>
           <boxGeometry args={[3.1, 0.2, 0.9]} />
           <meshStandardMaterial color="#FAF7F0" roughness={0.8} />
@@ -105,7 +148,7 @@ export const TerraceFurniture: React.FC = () => {
           <meshStandardMaterial color="#FAF7F0" roughness={0.8} />
         </mesh>
 
-        {/* Outdoor Scatter Pillows (Sage & Sand) */}
+        {/* Outdoor Pillows */}
         {[
           { pos: [-0.8, 0.52, 1.15], col: colors.pillowSage },
           { pos: [0.1, 0.52, 1.15], col: '#D8CAB7' },
@@ -119,40 +162,30 @@ export const TerraceFurniture: React.FC = () => {
         ))}
       </group>
 
-      {/* -------------------- 3. LOW OUTDOOR TRAVERTINE COFFEE TABLE -------------------- */}
-      {/* Positioned in front of the outdoor sofa at X = 0.5, Z = -8.0 */}
+      {/* -------------------- 3. LOW OUTDOOR COFFEE TABLE -------------------- */}
       <group position={[0.5, 0, -8.0]}>
         <RigidBody type="fixed" colliders={false}>
           <CuboidCollider args={[0.65, 0.18, 0.4]} position={[0, 0.18, 0]} />
         </RigidBody>
 
-        {/* Travertine Slab Table */}
         <mesh position={[0, 0.16, 0]} castShadow receiveShadow>
           <boxGeometry args={[1.3, 0.32, 0.8]} />
           <meshStandardMaterial color={colors.travertine} roughness={0.5} />
         </mesh>
 
-        {/* Drinks Serving Tray with Carafe & Glasses */}
         <group position={[0.1, 0.33, 0]}>
           <mesh castShadow>
             <cylinderGeometry args={[0.22, 0.22, 0.02, 24]} />
             <meshStandardMaterial color={colors.brass} metalness={0.88} roughness={0.25} />
           </mesh>
-          {/* Glass Carafe */}
           <mesh position={[-0.06, 0.14, 0]} castShadow>
             <cylinderGeometry args={[0.04, 0.06, 0.26, 16]} />
-            <meshPhysicalMaterial
-              color="#FFFFFF"
-              roughness={0.05}
-              transmission={0.9}
-              transparent
-              opacity={0.5}
-            />
+            <meshPhysicalMaterial color="#FFFFFF" roughness={0.05} transmission={0.9} transparent opacity={0.5} />
           </mesh>
         </group>
       </group>
 
-      {/* -------------------- 4. LARGE ARCHITECTURAL PLANTERS WITH PALM & MEDITERRANEAN GREENERY -------------------- */}
+      {/* -------------------- 4. LARGE PLANTERS -------------------- */}
       {[
         [-3.0, 0, -6.8],
         [-3.0, 0, -11.4],
@@ -162,12 +195,10 @@ export const TerraceFurniture: React.FC = () => {
           <RigidBody type="fixed" colliders={false}>
             <CuboidCollider args={[0.38, 0.42, 0.38]} position={[0, 0.42, 0]} />
           </RigidBody>
-          {/* Travertine Box Planter */}
           <mesh position={[0, 0.38, 0]} castShadow receiveShadow>
             <boxGeometry args={[0.76, 0.76, 0.76]} />
             <meshStandardMaterial color={colors.travertine} roughness={0.5} />
           </mesh>
-          {/* Lush Green Foliage */}
           <group position={[0, 0.82, 0]}>
             <mesh position={[0, 0.35, 0]} castShadow>
               <sphereGeometry args={[0.42, 16, 16]} />
@@ -194,9 +225,11 @@ export const TerraceFurniture: React.FC = () => {
           </mesh>
           <mesh position={[0, 0.22, 0]}>
             <boxGeometry args={[0.16, 0.38, 0.16]} />
-            <meshBasicMaterial color="#FFE8BA" />
+            <meshBasicMaterial color={isTerraceLightOn ? '#FFE8BA' : '#4A453B'} />
           </mesh>
-          <pointLight position={[0, 0.24, 0]} color="#FFE0A0" intensity={0.9} distance={3.5} />
+          {isTerraceLightOn && (
+            <pointLight position={[0, 0.24, 0]} color="#FFE0A0" intensity={0.9} distance={3.5} />
+          )}
         </group>
       ))}
     </group>

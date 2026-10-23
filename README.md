@@ -33,7 +33,32 @@ Built with **Next.js App Router**, **TypeScript**, **Tailwind CSS**, and **Three
   - **Master Bath & Spa**: Monolithic freestanding mineral resin soaking tub with floor-mounted brass filler tap, walk-in rain shower with frameless glass panel, ceiling-mounted brass rain head and marble shampoo niche, double vanity with dual undermount basins, brass faucets, dual backlit arched mirrors, rolled waffle towels, white orchid, wall-hung toilet, and high frosted privacy window.
   - **Guest Bedroom Suite**: Double bed with fluted headboard, bedding, terracotta throw, nightstands with lamps, work desk with laptop, lamp, modernist desk chair, built-in wardrobe with brass handles, and gallery wall art.
   - **Guest Powder Room**: Monolithic fluted stone basin vanity, wall-mounted brass faucet, tall backlit pill mirror, luxury reed fragrance diffuser, and wall-hung minimalist toilet.
-  - **Private Sky Terrace**: Weatherproof outdoor teak & linen sectional lounge, low travertine coffee table with carafe and glasses, large travertine box planters with Mediterranean greenery, ambient evening lanterns, and an **animated procedural Jacuzzi pool water surface** with dynamic ripple shaders and submerged aquamarine lighting.
+- **Interactions & Sound Engine (Phase 5)**:
+  - **Procedural Web Audio API Synthesis Engine (Zero Audio Files)**:
+    - **Ambient Generative Jazz**: Warm electric piano / synth pad chords cycling through rich jazz voicings with soft filter sweeps.
+    - **Surface-Aware Footsteps**: Distinct sonic signatures for honed travertine/stone (crisp click + resonance), pale oak hardwood (warm mid-range thud), and bouclé carpets/rugs (soft muted step).
+    - **Door & Latch Audio**: Resonant wood clicks and sliding glass roller friction sounds.
+    - **Wind Gusts**: Filtered pink noise modulated with continuous natural breeze LFO when windows are opened.
+    - **Water Streams & Splashing**: Continuous synthesized water flow for vanity faucets, walk-in rain shower, and Jacuzzi spa.
+    - **Fireplace Crackle**: Warm low rumble with randomized high-passed snap/pop impulses.
+    - **Relaxation Breathing Audio**: Gentle rhythmic wave and harmonic swell when lying down on beds.
+    - **Master Audio Controls**: Volume slider (0-100%) in settings and quick one-key mute toggle (`M` key or UI).
+  - **Posture System (Sitting & Lying Down)**:
+    - **King Bed & Guest Bed**: Press `[E]` to smoothly lower camera onto the pillows looking up toward the ceiling with relaxing breathing audio; press `[E]`, `[Space]`, or movement keys to cleanly stand back up without physics clipping.
+    - **Seating**: Sit on the Bouclé Living Sectional Sofa, Kitchen Island Bar Stools, Terrace Teak Lounge, or Guest Desk Chair to lower camera to a relaxed seated eye height.
+  - **Interactive Windows & Curtains**:
+    - Openable sliding windows in Grand Living Gallery and Master Bedroom; tilt-open frosted privacy window in Master Bath.
+    - Breeze detection: opening windows activates wind audio and causes sheer curtains and indoor potted trees to flutter and sway.
+    - Curtains in Living Room and Master Bedroom can be drawn open or pulled closed with `[E]`.
+  - **Interactive Appliances & Architectural Fixtures**:
+    - **85" OLED TV**: Interactive power toggle playing dynamic real-time generative digital visuals on the display screen and casting variable ambient light.
+    - **Linear Fireplace**: Interactive power toggle with animated procedural flame meshes, flickering point light, and authentic fire crackling audio.
+    - **Induction Cooktop**: Interactive toggle activating 4 glowing radiant heating coils.
+    - **Refrigerator & Cabinetry**: French door refrigerator swings open to reveal interior cold white LED lighting, shelves, and chilled bottles; upper cabinets open to reveal stacked glassware.
+    - **Master & Powder Bathrooms**: Vanity faucets stream real-time water into basins with running audio; rain shower produces falling water droplets and rising steam mist; toilet lids toggle open/closed.
+    - **Terrace Jacuzzi**: Proximity sensor amplifies water ripples when walking near the rim; interactive spa jet controller activates bubbling aerated water.
+    - **Scene Lighting Panel**: Added to Pause Menu (`Esc`), allowing instant room-by-room light toggling as well as "Turn All On" and "Turn All Off" presets, paired with tactile brushed brass wall switches throughout every room.
+    - **Life Details**: Working wall clock on the media wall with moving second, minute, and hour hands synchronized to real time.
 - **Interactive Door System**:
   - Reusable `<Door>` component supporting hinged swing doors and sliding glass doors.
   - Rapier kinematic colliders that update seamlessly when doors open or close.

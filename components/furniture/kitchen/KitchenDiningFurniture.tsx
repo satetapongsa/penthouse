@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useRef } from 'react';
 import * as THREE from 'three';
+import { useFrame } from '@react-three/fiber';
 import { RigidBody, CuboidCollider } from '@react-three/rapier';
 import {
   getCalacattaMarbleTexture,
@@ -9,6 +10,7 @@ import {
   getBoucleFabricTexture,
   LUXURY_PALETTE,
 } from '@/lib/materials';
+import { useGameStore } from '@/store/useGameStore';
 
 export const KitchenDiningFurniture: React.FC = () => {
   const marbleTex = useMemo(() => getCalacattaMarbleTexture(), []);
@@ -16,10 +18,48 @@ export const KitchenDiningFurniture: React.FC = () => {
   const boucleTex = useMemo(() => getBoucleFabricTexture(), []);
   const colors = LUXURY_PALETTE.colors;
 
+  // Zustand Store Interactions
+  const enterSitting = useGameStore((s) => s.enterSitting);
+  const cooktopOn = useGameStore((s) => s.cooktopOn);
+  const toggleCooktop = useGameStore((s) => s.toggleCooktop);
+  const fridgeOpen = useGameStore((s) => s.fridgeOpen);
+  const toggleFridge = useGameStore((s) => s.toggleFridge);
+  const cabinetOpen = useGameStore((s) => s.kitchenCabinetOpen);
+  const toggleCabinet = useGameStore((s) => s.toggleKitchenCabinet);
+  const isKitchenLightOn = useGameStore((s) => s.lightingStates.kitchen_dining ?? true);
+  const toggleKitchenLight = useGameStore((s) => s.toggleRoomLight);
+
+  // Animated Pivots
+  const fridgeDoorRef = useRef<THREE.Group>(null);
+  const cabinetDoorRef = useRef<THREE.Group>(null);
+
+  useFrame((_, delta) => {
+    // 1. Refrigerator Door Smooth Swing
+    if (fridgeDoorRef.current) {
+      const targetAngle = fridgeOpen ? Math.PI / 2.2 : 0;
+      fridgeDoorRef.current.rotation.y = THREE.MathUtils.damp(
+        fridgeDoorRef.current.rotation.y,
+        targetAngle,
+        5.0,
+        delta
+      );
+    }
+
+    // 2. Kitchen Cabinet Smooth Swing
+    if (cabinetDoorRef.current) {
+      const targetAngle = cabinetOpen ? -Math.PI / 2.2 : 0;
+      cabinetDoorRef.current.rotation.y = THREE.MathUtils.damp(
+        cabinetDoorRef.current.rotation.y,
+        targetAngle,
+        5.0,
+        delta
+      );
+    }
+  });
+
   return (
     <group>
       {/* -------------------- 1. WATERFALL CALACATTA MARBLE ISLAND -------------------- */}
-      {/* Center: X = 10.75, Z = -1.0, Width: 3.6m, Depth: 1.2m, Counter Height: 0.92m */}
       <group position={[10.75, 0, -1.0]}>
         <RigidBody type="fixed" colliders={false}>
           <CuboidCollider args={[1.8, 0.46, 0.6]} position={[0, 0.46, 0]} />
@@ -28,43 +68,26 @@ export const KitchenDiningFurniture: React.FC = () => {
         {/* Countertop Slab */}
         <mesh position={[0, 0.89, 0]} castShadow receiveShadow>
           <boxGeometry args={[3.6, 0.06, 1.2]} />
-          <meshPhysicalMaterial
-            color={colors.calacatta}
-            map={marbleTex}
-            roughness={0.12}
-            clearcoat={0.9}
-          />
+          <meshPhysicalMaterial color={colors.calacatta} map={marbleTex} roughness={0.12} clearcoat={0.9} />
         </mesh>
 
-        {/* Left Waterfall Marble Edge (drops to floor) */}
+        {/* Waterfall Marble Edges */}
         <mesh position={[-1.77, 0.44, 0]} castShadow receiveShadow>
           <boxGeometry args={[0.06, 0.88, 1.2]} />
-          <meshPhysicalMaterial
-            color={colors.calacatta}
-            map={marbleTex}
-            roughness={0.12}
-            clearcoat={0.9}
-          />
+          <meshPhysicalMaterial color={colors.calacatta} map={marbleTex} roughness={0.12} clearcoat={0.9} />
         </mesh>
-
-        {/* Right Waterfall Marble Edge (drops to floor) */}
         <mesh position={[1.77, 0.44, 0]} castShadow receiveShadow>
           <boxGeometry args={[0.06, 0.88, 1.2]} />
-          <meshPhysicalMaterial
-            color={colors.calacatta}
-            map={marbleTex}
-            roughness={0.12}
-            clearcoat={0.9}
-          />
+          <meshPhysicalMaterial color={colors.calacatta} map={marbleTex} roughness={0.12} clearcoat={0.9} />
         </mesh>
 
-        {/* Fluted Pale Oak Island Under-Cabinetry (recessed for bar stool knee clearance) */}
+        {/* Under-Cabinetry Base */}
         <mesh position={[0, 0.44, 0.12]} castShadow receiveShadow>
           <boxGeometry args={[3.42, 0.84, 0.92]} />
           <meshStandardMaterial color={colors.paleOak} map={oakTex} roughness={0.5} />
         </mesh>
 
-        {/* Brushed Brass Recessed Toe Kick */}
+        {/* Brass Toe Kick */}
         <mesh position={[0, 0.04, 0.12]}>
           <boxGeometry args={[3.44, 0.08, 0.88]} />
           <meshStandardMaterial color={colors.brass} metalness={0.88} roughness={0.25} />
@@ -72,12 +95,10 @@ export const KitchenDiningFurniture: React.FC = () => {
 
         {/* Undermount Prep Sink */}
         <group position={[-0.8, 0.92, 0.05]}>
-          {/* Sink Basin */}
           <mesh position={[0, -0.1, 0]}>
             <boxGeometry args={[0.55, 0.2, 0.42]} />
             <meshStandardMaterial color="#2B2824" metalness={0.8} roughness={0.3} />
           </mesh>
-          {/* Gooseneck Brushed Brass Mixer Faucet */}
           <group position={[0, 0.1, -0.18]}>
             <mesh castShadow>
               <cylinderGeometry args={[0.015, 0.02, 0.26, 16]} />
@@ -90,32 +111,69 @@ export const KitchenDiningFurniture: React.FC = () => {
           </group>
         </group>
 
-        {/* Flush Black Induction Cooktop */}
-        <group position={[0.7, 0.925, 0.05]}>
+        {/* -------------------- INDUCTION COOKTOP (INTERACTIVE) -------------------- */}
+        <group
+          position={[0.7, 0.925, 0.05]}
+          userData={{
+            interactable: true,
+            interactableId: 'kitchen-cooktop',
+            label: cooktopOn ? 'Turn Off Cooktop' : 'Turn On Cooktop',
+            onInteract: toggleCooktop,
+          }}
+        >
+          {/* Glass Cooktop Plate */}
           <mesh>
             <boxGeometry args={[0.85, 0.01, 0.52]} />
-            <meshPhysicalMaterial
-              color="#111111"
-              roughness={0.05}
-              clearcoat={1.0}
-              reflectivity={0.9}
-            />
+            <meshPhysicalMaterial color="#111111" roughness={0.05} clearcoat={1.0} reflectivity={0.9} />
           </mesh>
-          {/* 4 Subtle Induction Cooking Rings */}
+
+          {/* 4 Induction Rings */}
           {[-0.22, 0.22].map((cx) =>
             [-0.12, 0.12].map((cz) => (
-              <mesh key={`ring-${cx}-${cz}`} position={[cx, 0.006, cz]} rotation={[-Math.PI / 2, 0, 0]}>
-                <ringGeometry args={[0.07, 0.075, 32]} />
-                <meshBasicMaterial color="rgba(255, 255, 255, 0.35)" />
+              <mesh key={`ring-${cx}-${cz}`} position={[cx, 0.007, cz]} rotation={[-Math.PI / 2, 0, 0]}>
+                <ringGeometry args={[0.065, 0.075, 32]} />
+                <meshBasicMaterial color={cooktopOn ? '#FF4411' : 'rgba(255, 255, 255, 0.35)'} />
               </mesh>
             ))
           )}
+
+          {/* Glowing Red Heating Coils when Cooktop is On */}
+          {cooktopOn && (
+            <>
+              {[-0.22, 0.22].map((cx) =>
+                [-0.12, 0.12].map((cz) => (
+                  <mesh key={`glow-${cx}-${cz}`} position={[cx, 0.006, cz]} rotation={[-Math.PI / 2, 0, 0]}>
+                    <circleGeometry args={[0.065, 32]} />
+                    <meshBasicMaterial color="#FF3B00" transparent opacity={0.8} />
+                  </mesh>
+                ))
+              )}
+              <pointLight position={[0, 0.2, 0]} color="#FF4500" intensity={1.5} distance={2.5} />
+            </>
+          )}
         </group>
 
-        {/* -------------------- 4 BAR STOOLS -------------------- */}
+        {/* -------------------- 4 BAR STOOLS (INTERACTIVE SIT) -------------------- */}
         {[-1.2, -0.4, 0.4, 1.2].map((bx, idx) => (
-          <group key={`stool-${idx}`} position={[bx, 0, -0.68]}>
-            {/* Brass Stool Legs & Footrest */}
+          <group
+            key={`stool-${idx}`}
+            position={[bx, 0, -0.68]}
+            userData={{
+              interactable: true,
+              interactableId: `kitchen-stool-${idx}`,
+              label: 'Sit at Kitchen Bar',
+              onInteract: () => {
+                enterSitting({
+                  position: [10.75 + bx, 0, -1.68],
+                  eyeHeight: 1.15,
+                  pitch: -0.05,
+                  yaw: 0,
+                  returnPosition: [10.75 + bx, 1.8, -2.4],
+                  returnYaw: 0,
+                });
+              },
+            }}
+          >
             <mesh position={[0, 0.32, 0]} castShadow>
               <cylinderGeometry args={[0.018, 0.025, 0.64, 16]} />
               <meshStandardMaterial color={colors.brass} metalness={0.9} roughness={0.2} />
@@ -124,12 +182,10 @@ export const KitchenDiningFurniture: React.FC = () => {
               <torusGeometry args={[0.16, 0.012, 12, 24]} />
               <meshStandardMaterial color={colors.brass} metalness={0.9} roughness={0.2} />
             </mesh>
-            {/* Upholstered Ivory Bouclé Seat */}
             <mesh position={[0, 0.66, 0]} castShadow>
               <cylinderGeometry args={[0.2, 0.18, 0.08, 24]} />
               <meshStandardMaterial color={colors.ivory} map={boucleTex} roughness={0.8} />
             </mesh>
-            {/* Low-profile Curved Backrest */}
             <mesh position={[0, 0.8, -0.16]} castShadow>
               <boxGeometry args={[0.34, 0.18, 0.04]} />
               <meshStandardMaterial color={colors.ivory} map={boucleTex} roughness={0.8} />
@@ -137,104 +193,155 @@ export const KitchenDiningFurniture: React.FC = () => {
           </group>
         ))}
 
-        {/* -------------------- BRASS PENDANT LIGHTS OVER ISLAND -------------------- */}
+        {/* Pendant Lights Over Island */}
         {[-1.0, 0, 1.0].map((px, pidx) => (
           <group key={`pendant-${pidx}`} position={[px, 2.3, 0]}>
-            {/* Suspension Rod from 3.4m ceiling */}
             <mesh position={[0, 0.55, 0]}>
               <cylinderGeometry args={[0.006, 0.006, 1.1, 8]} />
               <meshStandardMaterial color={colors.brass} metalness={0.9} roughness={0.2} />
             </mesh>
-            {/* Sculptural Brushed Brass Canopy */}
             <mesh position={[0, 0, 0]} castShadow>
               <cylinderGeometry args={[0.14, 0.14, 0.18, 24]} />
               <meshStandardMaterial color={colors.brass} metalness={0.9} roughness={0.22} />
             </mesh>
-            {/* Frosted Opal Diffuser Globe */}
             <mesh position={[0, -0.1, 0]}>
               <sphereGeometry args={[0.11, 24, 24]} />
               <meshBasicMaterial color="#FFF9E6" />
             </mesh>
-            {/* Warm Downward Light */}
-            <pointLight position={[0, -0.18, 0]} color="#FFF3DD" intensity={0.9} distance={4} />
+            {isKitchenLightOn && (
+              <pointLight position={[0, -0.18, 0]} color="#FFF3DD" intensity={0.9} distance={4} />
+            )}
           </group>
         ))}
       </group>
 
-      {/* -------------------- 2. FULL-HEIGHT BACK KITCHEN CABINETRY BANK -------------------- */}
-      {/* Positioned along the South wall of Kitchen (Z = 1.86, X: 8.5 to 13.5) */}
+      {/* -------------------- 2. BACK KITCHEN CABINETRY BANK & APPLIANCES -------------------- */}
       <group position={[11.0, 0, 1.86]} rotation={[0, Math.PI, 0]}>
         <RigidBody type="fixed" colliders={false}>
           <CuboidCollider args={[2.5, 1.7, 0.32]} position={[0, 1.7, 0]} />
         </RigidBody>
 
-        {/* Full-Height Pale Oak & Ivory Cabinet Wall (Height 3.4m) */}
+        {/* Cabinet Wall Shell */}
         <mesh position={[0, 1.7, 0]} castShadow receiveShadow>
           <boxGeometry args={[4.9, 3.4, 0.62]} />
           <meshStandardMaterial color={colors.paleOak} map={oakTex} roughness={0.5} />
         </mesh>
 
-        {/* Recessed Marble Appliance Niche */}
+        {/* Recessed Niche */}
         <group position={[0, 1.35, 0.28]}>
           <mesh>
             <boxGeometry args={[2.6, 0.9, 0.1]} />
             <meshPhysicalMaterial color={colors.calacatta} map={marbleTex} roughness={0.15} />
           </mesh>
-          {/* Under-cabinet Backlight */}
-          <pointLight position={[0, 0.4, 0.1]} color="#FFF0D4" intensity={1.1} distance={3} />
+          {isKitchenLightOn && (
+            <pointLight position={[0, 0.4, 0.1]} color="#FFF0D4" intensity={1.1} distance={3} />
+          )}
         </group>
 
-        {/* Integrated Built-in Wall Oven Tower */}
-        <group position={[-1.75, 1.4, 0.32]}>
-          <mesh castShadow>
-            <boxGeometry args={[0.72, 1.1, 0.04]} />
-            <meshStandardMaterial color="#1E1B18" metalness={0.8} roughness={0.3} />
+        {/* -------------------- UPPER CABINET (INTERACTIVE) -------------------- */}
+        <group position={[0, 2.35, 0.28]}>
+          {/* Cabinet Interior Cavity */}
+          <mesh position={[0, 0, -0.05]}>
+            <boxGeometry args={[1.2, 0.7, 0.3]} />
+            <meshStandardMaterial color="#2B2621" roughness={0.6} />
           </mesh>
-          {/* Oven Tinted Glass Window */}
-          <mesh position={[0, 0.05, 0.025]}>
-            <planeGeometry args={[0.62, 0.52]} />
-            <meshPhysicalMaterial color="#111111" roughness={0.1} clearcoat={1.0} />
-          </mesh>
-          {/* Horizontal Brass Handle */}
-          <mesh position={[0, 0.36, 0.04]}>
-            <boxGeometry args={[0.54, 0.02, 0.03]} />
-            <meshStandardMaterial color={colors.brass} metalness={0.9} roughness={0.2} />
-          </mesh>
+          {/* Glassware inside */}
+          {[-0.35, 0, 0.35].map((gx) => (
+            <mesh key={`glass-${gx}`} position={[gx, -0.15, 0]}>
+              <cylinderGeometry args={[0.04, 0.035, 0.14, 16]} />
+              <meshPhysicalMaterial color="#E8F1F5" roughness={0.05} transmission={0.95} transparent opacity={0.6} />
+            </mesh>
+          ))}
+
+          {/* Swinging Cabinet Door */}
+          <group
+            ref={cabinetDoorRef}
+            position={[-0.6, 0, 0.12]}
+            userData={{
+              interactable: true,
+              interactableId: 'kitchen-cabinet',
+              label: cabinetOpen ? 'Close Cabinet Door' : 'Open Cabinet Door',
+              onInteract: toggleCabinet,
+            }}
+          >
+            <mesh position={[0.6, 0, 0]} castShadow>
+              <boxGeometry args={[1.2, 0.72, 0.02]} />
+              <meshStandardMaterial color={colors.paleOak} map={oakTex} roughness={0.5} />
+            </mesh>
+            <mesh position={[1.1, 0, 0.02]}>
+              <boxGeometry args={[0.02, 0.18, 0.02]} />
+              <meshStandardMaterial color={colors.brass} metalness={0.9} roughness={0.2} />
+            </mesh>
+          </group>
         </group>
 
-        {/* Flush Seamless Integrated Refrigerator Columns */}
+        {/* -------------------- REFRIGERATOR (INTERACTIVE) -------------------- */}
         <group position={[1.75, 1.7, 0.32]}>
-          <mesh castShadow>
-            <boxGeometry args={[0.9, 3.3, 0.02]} />
-            <meshStandardMaterial color="#EDE7DD" roughness={0.4} />
+          {/* Fridge Interior Cavity */}
+          <mesh position={[0, 0, -0.1]}>
+            <boxGeometry args={[0.88, 3.2, 0.4]} />
+            <meshStandardMaterial color="#F7F7F8" roughness={0.2} />
           </mesh>
-          {/* Vertical Architectural Brass Pulls */}
-          <mesh position={[-0.4, 0, 0.03]}>
-            <boxGeometry args={[0.025, 1.4, 0.03]} />
-            <meshStandardMaterial color={colors.brass} metalness={0.9} roughness={0.2} />
-          </mesh>
+
+          {/* Interior Shelves & Beverages */}
+          {[-0.8, -0.2, 0.4, 1.0].map((sy) => (
+            <mesh key={`shelf-${sy}`} position={[0, sy, -0.05]}>
+              <boxGeometry args={[0.84, 0.02, 0.32]} />
+              <meshPhysicalMaterial color="#DDE8F0" roughness={0.1} transmission={0.8} transparent opacity={0.5} />
+            </mesh>
+          ))}
+          {/* Chilled Beverage Bottles */}
+          {[-0.2, 0.2].map((bx) => (
+            <mesh key={`bottle-${bx}`} position={[bx, -0.05, -0.05]}>
+              <cylinderGeometry args={[0.035, 0.035, 0.24, 16]} />
+              <meshPhysicalMaterial color="#689E6E" roughness={0.1} transmission={0.85} transparent opacity={0.7} />
+            </mesh>
+          ))}
+
+          {/* Interior Cool White LED Light (lights up when fridge opens) */}
+          {fridgeOpen && (
+            <pointLight position={[0, 0.8, 0.05]} color="#E6F2FF" intensity={2.2} distance={3.5} />
+          )}
+
+          {/* Swinging Fridge Door with Pivot on Left */}
+          <group
+            ref={fridgeDoorRef}
+            position={[-0.44, 0, 0.08]}
+            userData={{
+              interactable: true,
+              interactableId: 'kitchen-fridge',
+              label: fridgeOpen ? 'Close Refrigerator' : 'Open Refrigerator',
+              onInteract: toggleFridge,
+            }}
+          >
+            <mesh position={[0.44, 0, 0]} castShadow>
+              <boxGeometry args={[0.88, 3.24, 0.04]} />
+              <meshStandardMaterial color="#EDE7DD" roughness={0.35} />
+            </mesh>
+            {/* Long Vertical Brass Door Handle */}
+            <mesh position={[0.82, 0, 0.04]}>
+              <boxGeometry args={[0.025, 1.4, 0.03]} />
+              <meshStandardMaterial color={colors.brass} metalness={0.9} roughness={0.2} />
+            </mesh>
+          </group>
         </group>
       </group>
 
-      {/* -------------------- 3. GRAND DINING TABLE WITH 8 CHAIRS & SET TABLEWARE -------------------- */}
-      {/* Positioned on the North side facing panoramic windows: X = 10.75, Z = -4.2 */}
+      {/* -------------------- 3. GRAND DINING TABLE & 8 CHAIRS -------------------- */}
       <group position={[10.75, 0, -4.2]}>
         <RigidBody type="fixed" colliders={false}>
           <CuboidCollider args={[1.75, 0.38, 0.65]} position={[0, 0.38, 0]} />
         </RigidBody>
 
-        {/* Grand 3.4m x 1.2m Honed Travertine & Pale Oak Tabletop (Height 0.76m) */}
         <mesh position={[0, 0.74, 0]} castShadow receiveShadow>
           <boxGeometry args={[3.4, 0.06, 1.25]} />
           <meshStandardMaterial color={colors.travertine} roughness={0.4} />
         </mesh>
-        {/* Brass Under-table Perimeter Inlay */}
         <mesh position={[0, 0.705, 0]}>
           <boxGeometry args={[3.32, 0.015, 1.18]} />
           <meshStandardMaterial color={colors.brass} metalness={0.88} roughness={0.25} />
         </mesh>
 
-        {/* Dual Fluted Sculptural Pedestal Bases */}
         {[-0.95, 0.95].map((bx) => (
           <group key={`table-base-${bx}`} position={[bx, 0.34, 0]}>
             <mesh castShadow receiveShadow>
@@ -248,29 +355,24 @@ export const KitchenDiningFurniture: React.FC = () => {
           </group>
         ))}
 
-        {/* -------------------- 8 UPHOLSTERED DINING CHAIRS -------------------- */}
-        {/* North Row (4 chairs facing South): Z = -0.72 */}
+        {/* 8 Dining Chairs */}
         {[-1.25, -0.42, 0.42, 1.25].map((cx, idx) => (
           <group key={`chair-north-${idx}`} position={[cx, 0, -0.72]}>
-            {/* Tapered Brass Legs */}
             <mesh position={[0, 0.22, 0]} castShadow>
               <cylinderGeometry args={[0.015, 0.022, 0.44, 12]} />
               <meshStandardMaterial color={colors.brass} metalness={0.88} roughness={0.25} />
             </mesh>
-            {/* Ivory Bouclé Cushion */}
             <mesh position={[0, 0.46, 0]} castShadow>
-              <boxGeometry args={[0.48, 0.08, 0.46]} />
+              <boxGeometry args={[0.48, 0.08, 0.48]} />
               <meshStandardMaterial color={colors.ivory} map={boucleTex} roughness={0.8} />
             </mesh>
-            {/* Curved Backrest */}
-            <mesh position={[0, 0.72, -0.2]} castShadow>
-              <boxGeometry args={[0.48, 0.44, 0.08]} />
+            <mesh position={[0, 0.68, -0.21]} castShadow>
+              <boxGeometry args={[0.46, 0.38, 0.05]} />
               <meshStandardMaterial color={colors.ivory} map={boucleTex} roughness={0.8} />
             </mesh>
           </group>
         ))}
 
-        {/* South Row (4 chairs facing North): Z = 0.72 */}
         {[-1.25, -0.42, 0.42, 1.25].map((cx, idx) => (
           <group key={`chair-south-${idx}`} position={[cx, 0, 0.72]} rotation={[0, Math.PI, 0]}>
             <mesh position={[0, 0.22, 0]} castShadow>
@@ -278,141 +380,40 @@ export const KitchenDiningFurniture: React.FC = () => {
               <meshStandardMaterial color={colors.brass} metalness={0.88} roughness={0.25} />
             </mesh>
             <mesh position={[0, 0.46, 0]} castShadow>
-              <boxGeometry args={[0.48, 0.08, 0.46]} />
+              <boxGeometry args={[0.48, 0.08, 0.48]} />
               <meshStandardMaterial color={colors.ivory} map={boucleTex} roughness={0.8} />
             </mesh>
-            <mesh position={[0, 0.72, -0.2]} castShadow>
-              <boxGeometry args={[0.48, 0.44, 0.08]} />
+            <mesh position={[0, 0.68, -0.21]} castShadow>
+              <boxGeometry args={[0.46, 0.38, 0.05]} />
               <meshStandardMaterial color={colors.ivory} map={boucleTex} roughness={0.8} />
             </mesh>
           </group>
         ))}
-
-        {/* -------------------- SET TABLEWARE FOR 8 GUESTS -------------------- */}
-        {[-1.25, -0.42, 0.42, 1.25].map((tx) =>
-          [-0.38, 0.38].map((tz) => (
-            <group key={`place-setting-${tx}-${tz}`} position={[tx, 0.77, tz]}>
-              {/* Gold Charger Plate */}
-              <mesh position={[0, 0.005, 0]}>
-                <cylinderGeometry args={[0.16, 0.16, 0.01, 24]} />
-                <meshStandardMaterial color={colors.gold} metalness={0.85} roughness={0.25} />
-              </mesh>
-              {/* Fine Porcelain Dinner Plate */}
-              <mesh position={[0, 0.012, 0]}>
-                <cylinderGeometry args={[0.13, 0.13, 0.008, 24]} />
-                <meshStandardMaterial color="#FFFFFF" roughness={0.2} />
-              </mesh>
-              {/* Folded Ivory Linen Napkin */}
-              <mesh position={[0, 0.02, 0]}>
-                <boxGeometry args={[0.08, 0.015, 0.18]} />
-                <meshStandardMaterial color={colors.linen} roughness={0.85} />
-              </mesh>
-              {/* Crystal Wine Glass */}
-              <mesh position={[0.14, 0.06, tz > 0 ? -0.1 : 0.1]}>
-                <cylinderGeometry args={[0.035, 0.01, 0.12, 16]} />
-                <meshPhysicalMaterial
-                  color="#FFFFFF"
-                  roughness={0.05}
-                  transmission={0.92}
-                  transparent
-                  opacity={0.4}
-                />
-              </mesh>
-              {/* Polished Cutlery (Fork & Knife) */}
-              <mesh position={[-0.18, 0.006, 0]}>
-                <boxGeometry args={[0.015, 0.005, 0.2]} />
-                <meshStandardMaterial color={colors.brass} metalness={0.9} roughness={0.2} />
-              </mesh>
-              <mesh position={[0.18, 0.006, 0]}>
-                <boxGeometry args={[0.015, 0.005, 0.2]} />
-                <meshStandardMaterial color={colors.brass} metalness={0.9} roughness={0.2} />
-              </mesh>
-            </group>
-          ))
-        )}
-
-        {/* Centerpiece Sculptural Fruit Bowl */}
-        <group position={[0, 0.77, 0]}>
-          {/* Ceramic Shallow Center Bowl */}
-          <mesh castShadow>
-            <cylinderGeometry args={[0.24, 0.14, 0.08, 32]} />
-            <meshStandardMaterial color="#FAF8F3" roughness={0.4} />
-          </mesh>
-          {/* Fresh Pears & Green Citrus Figs */}
-          {[
-            { pos: [-0.06, 0.06, 0.02], col: '#B5C478' },
-            { pos: [0.07, 0.06, -0.04], col: '#9FB569' },
-            { pos: [0, 0.08, 0.06], col: '#C8D685' },
-          ].map((fruit, idx) => (
-            <mesh key={`fruit-${idx}`} position={fruit.pos as [number, number, number]} castShadow>
-              <sphereGeometry args={[0.045, 16, 16]} />
-              <meshStandardMaterial color={fruit.col} roughness={0.65} />
-            </mesh>
-          ))}
-        </group>
       </group>
 
-      {/* -------------------- 4. WINE DISPLAY WALL WITH GLASSES -------------------- */}
-      {/* Positioned along the East wall of Kitchen (X = 13.84, Z = -2.5, facing West) */}
-      <group position={[13.84, 0, -2.5]} rotation={[0, -Math.PI / 2, 0]}>
-        <RigidBody type="fixed" colliders={false}>
-          <CuboidCollider args={[1.2, 1.4, 0.22]} position={[0, 1.4, 0]} />
-        </RigidBody>
-
-        {/* Brushed Brass Framed Glass Enclosure (Height 2.8m, Width 2.4m) */}
-        <mesh position={[0, 1.4, 0]} castShadow receiveShadow>
-          <boxGeometry args={[2.4, 2.8, 0.44]} />
-          <meshStandardMaterial color="#2B2520" roughness={0.6} />
+      {/* -------------------- 4. KITCHEN WALL LIGHT SWITCH -------------------- */}
+      {/* Positioned on West kitchen wall (X = 7.55, Y = 1.35, Z = 0.5) */}
+      <group
+        position={[7.55, 1.35, 0.5]}
+        rotation={[0, Math.PI / 2, 0]}
+        userData={{
+          interactable: true,
+          interactableId: 'kitchen-light-switch',
+          label: isKitchenLightOn ? 'Turn Off Kitchen Lights' : 'Turn On Kitchen Lights',
+          onInteract: () => toggleKitchenLight('kitchen_dining'),
+        }}
+      >
+        <mesh castShadow>
+          <boxGeometry args={[0.08, 0.12, 0.015]} />
+          <meshStandardMaterial color={colors.brass} metalness={0.9} roughness={0.2} />
         </mesh>
-
-        {/* Backlit Champagne Warm Wall Niche */}
-        <mesh position={[0, 1.4, 0.05]}>
-          <planeGeometry args={[2.28, 2.68]} />
-          <meshBasicMaterial color="#EFE2CD" />
+        <mesh position={[0, 0, 0.01]}>
+          <boxGeometry args={[0.025, 0.045, 0.01]} />
+          <meshStandardMaterial color="#FFFFFF" roughness={0.2} />
         </mesh>
-        <pointLight position={[0, 1.6, 0.2]} color="#FFE6B8" intensity={1.3} distance={3.5} />
-
-        {/* 4 Backlit Horizontal Glass & Brass Shelves with Wine Bottles */}
-        {[0.5, 1.1, 1.7, 2.3].map((wy, widx) => (
-          <group key={`wine-shelf-${widx}`} position={[0, wy, 0.12]}>
-            {/* Shelf */}
-            <mesh>
-              <boxGeometry args={[2.24, 0.03, 0.28]} />
-              <meshStandardMaterial color={colors.brass} metalness={0.9} roughness={0.2} />
-            </mesh>
-            {/* Rows of Wine Bottles (Dark glass + gold seal) */}
-            {[-0.8, -0.4, 0, 0.4, 0.8].map((bx, bidx) => (
-              <group key={`bottle-${bx}-${bidx}`} position={[bx, 0.16, 0]}>
-                <mesh castShadow>
-                  <cylinderGeometry args={[0.038, 0.038, 0.28, 16]} />
-                  <meshPhysicalMaterial
-                    color="#141E15"
-                    roughness={0.1}
-                    transmission={0.4}
-                    transparent
-                    opacity={0.8}
-                  />
-                </mesh>
-                {/* Gold Foil Neck */}
-                <mesh position={[0, 0.16, 0]}>
-                  <cylinderGeometry args={[0.014, 0.016, 0.08, 16]} />
-                  <meshStandardMaterial color={colors.gold} metalness={0.9} roughness={0.2} />
-                </mesh>
-              </group>
-            ))}
-          </group>
-        ))}
-
-        {/* Outer Frameless Architectural Glass Front Doors */}
-        <mesh position={[0, 1.4, 0.23]}>
-          <planeGeometry args={[2.36, 2.76]} />
-          <meshPhysicalMaterial
-            color="#E8F2F7"
-            roughness={0.05}
-            transmission={0.92}
-            transparent
-            opacity={0.35}
-          />
+        <mesh position={[0, 0.035, 0.01]}>
+          <circleGeometry args={[0.004, 16]} />
+          <meshBasicMaterial color={isKitchenLightOn ? '#4ADE80' : '#E5E7EB'} />
         </mesh>
       </group>
     </group>
