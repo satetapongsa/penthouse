@@ -35,9 +35,14 @@ export function useKeyboardControls() {
         return;
       }
 
-      // Handle pause toggling on Escape
+      // Handle pause toggling or Photo Mode exit on Escape
       if (e.code === 'Escape') {
         e.preventDefault();
+        const isPhotoMode = useGameStore.getState().isPhotoMode;
+        if (isPhotoMode) {
+          useGameStore.getState().setPhotoMode(false);
+          return;
+        }
         if (isStarted) {
           if (isPaused) {
             resumeGame();

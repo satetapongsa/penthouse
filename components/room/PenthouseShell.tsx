@@ -16,6 +16,8 @@ import { MasterBathroomFurniture } from '@/components/furniture/bathroom/MasterB
 import { GuestBedroomFurniture } from '@/components/furniture/guest/GuestBedroomFurniture';
 import { PowderRoomFurniture } from '@/components/furniture/powder/PowderRoomFurniture';
 import { TerraceFurniture } from '@/components/furniture/terrace/TerraceFurniture';
+import { CitySkyline } from '@/components/environment/CitySkyline';
+import { AtmosphericLighting } from '@/components/environment/AtmosphericLighting';
 
 interface WallSegmentProps {
   position: [number, number, number];
@@ -81,6 +83,7 @@ export const PenthouseShell: React.FC = () => {
 
   const lightingStates = useGameStore((s) => s.lightingStates);
   const toggleRoomLight = useGameStore((s) => s.toggleRoomLight);
+  const quality = useGameStore((s) => s.quality);
 
   // Procedural Travertine Tile Texture for indoor floors
   const travertineTexture = useMemo(() => {
@@ -150,28 +153,8 @@ export const PenthouseShell: React.FC = () => {
 
   return (
     <group>
-      {/* -------------------- 1. LIGHTING SYSTEM -------------------- */}
-      <ambientLight color={colors.ambientLight} intensity={0.9} />
-      <hemisphereLight
-        color={colors.skyZenith}
-        groundColor={colors.floorTravertine}
-        intensity={0.65}
-      />
-      <directionalLight
-        color={colors.sunLight}
-        intensity={2.3}
-        position={[14, 18, -16]}
-        target-position={[0, 1.5, 0]}
-        castShadow
-        shadow-mapSize={[2048, 2048]}
-        shadow-camera-near={1}
-        shadow-camera-far={60}
-        shadow-camera-left={-22}
-        shadow-camera-right={22}
-        shadow-camera-top={18}
-        shadow-camera-bottom={-18}
-        shadow-bias={-0.0001}
-      />
+      {/* -------------------- 1. ATMOSPHERIC LIGHTING & SUN -------------------- */}
+      <AtmosphericLighting />
 
       {/* Warm Ambient Downlights across main zones (dynamically toggled per zone) */}
       {lightingStates.living && (
@@ -261,7 +244,7 @@ export const PenthouseShell: React.FC = () => {
         <planeGeometry args={[28.5, 12.5]} />
         <MeshReflectorMaterial
           blur={[300, 100]}
-          resolution={512}
+          resolution={quality === 'low' ? 128 : quality === 'medium' ? 256 : 512}
           mixBlur={0.8}
           mixStrength={1.2}
           roughness={0.25}
@@ -270,7 +253,7 @@ export const PenthouseShell: React.FC = () => {
           maxDepthThreshold={1.4}
           color={colors.floorTravertine}
           metalness={0.05}
-          mirror={0.35}
+          mirror={quality === 'low' ? 0.15 : 0.35}
         />
       </mesh>
 
@@ -596,40 +579,8 @@ export const PenthouseShell: React.FC = () => {
         </RigidBody>
       </group>
 
-      {/* -------------------- 7. PROCEDURAL SKYLINE BACKDROP -------------------- */}
-      <group position={[0, 0, -32]}>
-        {/* Soft Metropolitan Sky Horizon */}
-        <mesh position={[0, 20, -10]}>
-          <planeGeometry args={[180, 80]} />
-          <meshBasicMaterial color="#DEEAF3" />
-        </mesh>
-
-        {/* Golden Sun Flare */}
-        <mesh position={[38, 28, -9]}>
-          <circleGeometry args={[12, 32]} />
-          <meshBasicMaterial color="#FFFBE8" transparent opacity={0.8} />
-        </mesh>
-
-        {/* High-Rise Towers & Skyscrapers */}
-        {useMemo(() => {
-          const towers = [
-            { x: -48, w: 12, h: 42, z: -8, color: '#C8D9E7' },
-            { x: -32, w: 15, h: 56, z: -5, color: '#BCCFE0' },
-            { x: -16, w: 10, h: 36, z: -9, color: '#C6D8E8' },
-            { x: 3, w: 18, h: 64, z: -4, color: '#B4C8DC' },
-            { x: 22, w: 14, h: 48, z: -7, color: '#BFD2E3' },
-            { x: 38, w: 16, h: 38, z: -10, color: '#C9D9E7' },
-            { x: 55, w: 14, h: 52, z: -6, color: '#BACEDF' },
-          ];
-
-          return towers.map((t, idx) => (
-            <mesh key={`tower-${idx}`} position={[t.x, t.h / 2 - 8, t.z]}>
-              <boxGeometry args={[t.w, t.h, 8]} />
-              <meshBasicMaterial color={t.color} />
-            </mesh>
-          ));
-        }, [])}
-      </group>
+      {/* -------------------- 7. PROCEDURAL CITY SKYLINE & METROPOLIS -------------------- */}
+      <CitySkyline />
     </group>
   );
 };

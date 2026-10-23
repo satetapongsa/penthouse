@@ -291,16 +291,19 @@ export const Player: React.FC = () => {
     // Footstep Sound Synthesis & Head Bobbing
     const horizontalSpeed = Math.hypot(linvel.x, linvel.z);
     let bobOffset = 0;
+    const isHeadBobActive = settings.headBobEnabled ?? true;
     if (isGrounded.current && horizontalSpeed > 0.4) {
-      const bobFreq = isSprinting
-        ? PLAYER_CONFIG.headBobFrequency * 1.3
-        : PLAYER_CONFIG.headBobFrequency;
-      const bobAmp = isSprinting
-        ? PLAYER_CONFIG.headBobSprintAmplitude
-        : PLAYER_CONFIG.headBobWalkAmplitude;
+      if (isHeadBobActive) {
+        const bobFreq = isSprinting
+          ? PLAYER_CONFIG.headBobFrequency * 1.3
+          : PLAYER_CONFIG.headBobFrequency;
+        const bobAmp = isSprinting
+          ? PLAYER_CONFIG.headBobSprintAmplitude
+          : PLAYER_CONFIG.headBobWalkAmplitude;
 
-      headBobTimer.current += delta * bobFreq;
-      bobOffset = Math.sin(headBobTimer.current) * bobAmp;
+        headBobTimer.current += delta * bobFreq;
+        bobOffset = Math.sin(headBobTimer.current) * bobAmp;
+      }
 
       // Surface-sensitive footsteps
       stepDistanceAccum.current += horizontalSpeed * delta;

@@ -7,6 +7,7 @@ import { Physics } from '@react-three/rapier';
 import { PenthouseShell } from '@/components/room/PenthouseShell';
 import { Player } from '@/components/player/Player';
 import { InteractionManager } from '@/components/interaction/InteractionManager';
+import { PostProcessingEffects } from '@/components/canvas/PostProcessingEffects';
 import { useGameStore } from '@/store/useGameStore';
 import { PLAYER_CONFIG } from '@/lib/config';
 
@@ -20,6 +21,8 @@ export const PenthouseCanvas: React.FC<PenthouseCanvasProps> = ({ canvasContaine
   const isPaused = useGameStore((s) => s.isPaused);
   const isMobile = useGameStore((s) => s.isMobile);
   const resumeGame = useGameStore((s) => s.resumeGame);
+  const quality = useGameStore((s) => s.quality);
+  const screenshotTrigger = useGameStore((s) => s.screenshotTrigger);
 
   useEffect(() => {
     try {
@@ -33,12 +36,41 @@ export const PenthouseCanvas: React.FC<PenthouseCanvasProps> = ({ canvasContaine
     }
   }, [setWebGlSupported]);
 
+  // Handle Photo Mode Screenshot Download
+  useEffect(() => {
+    if (screenshotTrigger === 0) return;
+    try {
+      const canvasEl = canvasContainerRef.current?.querySelector('canvas');
+      if (canvasEl) {
+        const dataUrl = canvasEl.toDataURL('image/png');
+        const link = document.createElement('a');
+        link.download = `the-skyline-penthouse-${Date.now()}.png`;
+        link.href = dataUrl;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }
+    } catch (err) {
+      console.warn('Screenshot capture error:', err);
+    }
+  }, [screenshotTrigger, canvasContainerRef]);
+
   const handleCanvasClick = useCallback(() => {
     if (isMobile) return;
     if (isStarted && isPaused) {
       resumeGame();
     }
   }, [isMobile, isStarted, isPaused, resumeGame]);
+
+  const maxDeviceDpr = typeof window !== 'undefined' ? window.devicePixelRatio : 1.5;
+  const dprRange: [number, number] =
+    quality === 'low'
+      ? [1, 1]
+      : quality === 'medium'
+      ? [1, Math.min(1.25, maxDeviceDpr)]
+      : quality === 'high'
+      ? [1, Math.min(1.5, maxDeviceDpr)]
+      : [1, Math.min(2.0, maxDeviceDpr)];
 
   return (
     <div
@@ -47,7 +79,7 @@ export const PenthouseCanvas: React.FC<PenthouseCanvasProps> = ({ canvasContaine
       className="w-full h-full relative cursor-crosshair outline-hidden select-none"
     >
       <Canvas
-        shadows
+        shadows={quality !== 'low'}
         camera={{
           fov: PLAYER_CONFIG.baseFov,
           near: 0.1,
@@ -55,12 +87,13 @@ export const PenthouseCanvas: React.FC<PenthouseCanvasProps> = ({ canvasContaine
           position: PLAYER_CONFIG.spawnPosition,
         }}
         gl={{
-          antialias: true,
+          antialias: quality !== 'low',
           powerPreference: 'high-performance',
           toneMapping: THREE.ACESFilmicToneMapping,
           toneMappingExposure: 1.05,
+          preserveDrawingBuffer: true,
         }}
-        dpr={[1, Math.min(2, typeof window !== 'undefined' ? window.devicePixelRatio : 1.5)]}
+        dpr={dprRange}
       >
         <color attach="background" args={['#EEF5F9']} />
 
@@ -70,6 +103,9 @@ export const PenthouseCanvas: React.FC<PenthouseCanvasProps> = ({ canvasContaine
           <Player />
           <InteractionManager />
         </Physics>
+
+        {/* Cinematic Post-Processing Stack */}
+        <PostProcessingEffects />
       </Canvas>
     </div>
   );

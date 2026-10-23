@@ -3,6 +3,8 @@ import { audioEngine } from '@/lib/audio';
 
 export type GameState = 'intro' | 'loading' | 'playing' | 'paused';
 export type PlayerPosture = 'standing' | 'sitting' | 'lying';
+export type TimeOfDay = 'day' | 'sunset' | 'night';
+export type QualityPreset = 'low' | 'medium' | 'high' | 'ultra';
 
 export interface ControlState {
   forward: boolean;
@@ -22,6 +24,8 @@ export interface SettingsState {
   volume: number;
   isMuted: boolean;
   showFps: boolean;
+  headBobEnabled: boolean;
+  quality: QualityPreset;
 }
 
 export interface InteractableAction {
@@ -46,6 +50,12 @@ interface GameStore {
   isPaused: boolean;
   isMobile: boolean;
   webGlSupported: boolean;
+
+  // Visual Atmosphere & Quality
+  timeOfDay: TimeOfDay;
+  quality: QualityPreset;
+  isPhotoMode: boolean;
+  screenshotTrigger: number;
 
   // Active Control Inputs
   controls: ControlState;
@@ -96,6 +106,13 @@ interface GameStore {
   exitToIntro: () => void;
   setIsMobile: (isMobile: boolean) => void;
   setWebGlSupported: (supported: boolean) => void;
+
+  // Atmosphere Actions
+  setTimeOfDay: (timeOfDay: TimeOfDay) => void;
+  cycleTimeOfDay: () => void;
+  setQuality: (quality: QualityPreset) => void;
+  setPhotoMode: (enabled: boolean) => void;
+  triggerScreenshot: () => void;
 
   setControl: (key: keyof ControlState, active: boolean) => void;
   setJoystickVector: (vector: { x: number; y: number }) => void;
@@ -151,6 +168,8 @@ const initialSettings: SettingsState = {
   volume: 0.7,
   isMuted: false,
   showFps: false,
+  headBobEnabled: true,
+  quality: 'medium',
 };
 
 export const useGameStore = create<GameStore>((set, get) => ({
@@ -159,6 +178,11 @@ export const useGameStore = create<GameStore>((set, get) => ({
   isPaused: false,
   isMobile: false,
   webGlSupported: true,
+
+  timeOfDay: 'day',
+  quality: 'medium',
+  isPhotoMode: false,
+  screenshotTrigger: 0,
 
   controls: { ...initialControls },
   joystickVector: { x: 0, y: 0 },
@@ -189,7 +213,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
     master_bathroom: false,
   },
   curtainStates: {
-    living: false, // false = open drapes, true = pulled closed
+    living: false,
     master_bedroom: false,
   },
   lightingStates: {
@@ -274,6 +298,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       isPaused: false,
       posture: 'standing',
       postureTarget: null,
+      isPhotoMode: false,
       controls: { ...initialControls },
       joystickVector: { x: 0, y: 0 },
       lookDelta: { x: 0, y: 0 },
@@ -283,6 +308,41 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
   setIsMobile: (isMobile) => set({ isMobile }),
   setWebGlSupported: (webGlSupported) => set({ webGlSupported }),
+
+  // Atmosphere & Time of Day
+  setTimeOfDay: (timeOfDay) => {
+    audioEngine.playSwitch();
+    // Auto turn on interior lights at sunset or night
+    if (timeOfDay === 'sunset' || timeOfDay === 'night') {
+      get().setAllLights(true);
+      if (!get().fireplaceOn) get().toggleFireplace();
+    }
+    set({ timeOfDay });
+  },
+
+  cycleTimeOfDay: () => {
+    const current = get().timeOfDay;
+    const next: TimeOfDay = current === 'day' ? 'sunset' : current === 'sunset' ? 'night' : 'day';
+    get().setTimeOfDay(next);
+  },
+
+  setQuality: (quality) => {
+    set((state) => ({
+      quality,
+      settings: {
+        ...state.settings,
+        quality,
+      },
+    }));
+  },
+
+  setPhotoMode: (isPhotoMode) => {
+    set({ isPhotoMode, activeInteractable: null });
+  },
+
+  triggerScreenshot: () => {
+    set((state) => ({ screenshotTrigger: state.screenshotTrigger + 1 }));
+  },
 
   setControl: (key, active) => {
     set((state) => ({
@@ -325,7 +385,6 @@ export const useGameStore = create<GameStore>((set, get) => ({
   },
 
   triggerTeleport: (position, yaw) => {
-    // If sitting or lying, exit first
     if (get().posture !== 'standing') {
       get().exitSitting();
     }
@@ -553,6 +612,9 @@ export const useGameStore = create<GameStore>((set, get) => ({
     }
     if (typeof partial.isMuted === 'boolean') {
       audioEngine.setMuted(partial.isMuted);
+    }
+    if (partial.quality) {
+      set({ quality: partial.quality });
     }
     set((state) => ({
       settings: {

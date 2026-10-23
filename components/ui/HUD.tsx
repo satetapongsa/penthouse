@@ -2,11 +2,12 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useGameStore } from '@/store/useGameStore';
+import { useGameStore, TimeOfDay, QualityPreset } from '@/store/useGameStore';
 import { ARCHITECTURE_CONFIG } from '@/lib/config';
 import { MiniMap } from '@/components/navigation/MiniMap';
 import { RoomBanner } from '@/components/navigation/RoomBanner';
 import { TeleportMenu } from '@/components/navigation/TeleportMenu';
+import { PhotoModeOverlay } from '@/components/ui/PhotoModeOverlay';
 import {
   Play,
   RotateCcw,
@@ -17,6 +18,13 @@ import {
   Lightbulb,
   Volume2,
   VolumeX,
+  Camera,
+  Sun,
+  Sunset,
+  Moon,
+  Maximize,
+  Minimize,
+  Sliders,
 } from 'lucide-react';
 
 interface HUDProps {
@@ -33,6 +41,13 @@ export const HUD: React.FC<HUDProps> = ({ onRequestPointerLock }) => {
   const exitSitting = useGameStore((s) => s.exitSitting);
   const exitLying = useGameStore((s) => s.exitLying);
 
+  const timeOfDay = useGameStore((s) => s.timeOfDay);
+  const cycleTimeOfDay = useGameStore((s) => s.cycleTimeOfDay);
+  const quality = useGameStore((s) => s.quality);
+  const setQuality = useGameStore((s) => s.setQuality);
+  const isPhotoMode = useGameStore((s) => s.isPhotoMode);
+  const setPhotoMode = useGameStore((s) => s.setPhotoMode);
+
   const resumeGame = useGameStore((s) => s.resumeGame);
   const exitToIntro = useGameStore((s) => s.exitToIntro);
   const triggerTeleport = useGameStore((s) => s.triggerTeleport);
@@ -46,6 +61,7 @@ export const HUD: React.FC<HUDProps> = ({ onRequestPointerLock }) => {
   const setAllLights = useGameStore((s) => s.setAllLights);
 
   const [activeTab, setActiveTab] = useState<'menu' | 'lighting' | 'teleport' | 'controls' | 'settings'>('menu');
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
   const rooms = Object.values(ARCHITECTURE_CONFIG.rooms);
 
@@ -79,6 +95,17 @@ export const HUD: React.FC<HUDProps> = ({ onRequestPointerLock }) => {
     }
   };
 
+  const toggleFullscreen = () => {
+    if (typeof document === 'undefined') return;
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().catch(() => {});
+      setIsFullscreen(true);
+    } else {
+      document.exitFullscreen().catch(() => {});
+      setIsFullscreen(false);
+    }
+  };
+
   return (
     <>
       {/* -------------------- 1. WEBGL FALLBACK MODAL -------------------- */}
@@ -105,8 +132,40 @@ export const HUD: React.FC<HUDProps> = ({ onRequestPointerLock }) => {
         </div>
       )}
 
-      {/* -------------------- 2. DYNAMIC INTERACTIVE CROSSHAIR & PROMPT -------------------- */}
-      {isStarted && !isPaused && !isMobile && posture === 'standing' && (
+      {/* -------------------- 2. TOP RIGHT FLOATING CONTROLS (TIME & PHOTO) -------------------- */}
+      {isStarted && !isPaused && !isPhotoMode && (
+        <div className="fixed top-6 right-6 z-30 flex items-center gap-2 pointer-events-auto">
+          {/* Time of Day Cycle Button */}
+          <button
+            onClick={cycleTimeOfDay}
+            title="Click to toggle Time of Day (Day / Sunset / Night)"
+            className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#1A1816]/85 backdrop-blur-md border border-[#C5A059]/50 text-white shadow-xl hover:bg-[#25221F] transition-all cursor-pointer text-xs uppercase font-medium tracking-wider"
+          >
+            {timeOfDay === 'day' && <Sun className="w-3.5 h-3.5 text-[#F5C542]" />}
+            {timeOfDay === 'sunset' && <Sunset className="w-3.5 h-3.5 text-[#FF8E4D]" />}
+            {timeOfDay === 'night' && <Moon className="w-3.5 h-3.5 text-[#A5C8FF]" />}
+            <span>{timeOfDay}</span>
+          </button>
+
+          {/* Photo Mode Button */}
+          <button
+            onClick={() => {
+              if (document.pointerLockElement) {
+                document.exitPointerLock();
+              }
+              setPhotoMode(true);
+            }}
+            title="Enter Photo Mode"
+            className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#1A1816]/85 backdrop-blur-md border border-[#C5A059]/50 text-[#D4AF37] shadow-xl hover:bg-[#25221F] transition-all cursor-pointer text-xs uppercase font-medium tracking-wider"
+          >
+            <Camera className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Photo Mode</span>
+          </button>
+        </div>
+      )}
+
+      {/* -------------------- 3. DYNAMIC INTERACTIVE CROSSHAIR & PROMPT -------------------- */}
+      {isStarted && !isPaused && !isMobile && posture === 'standing' && !isPhotoMode && (
         <div className="fixed inset-0 pointer-events-none z-30 flex items-center justify-center">
           <div className="relative flex flex-col items-center justify-center">
             {/* Center Crosshair Dot / Focus Ring */}
@@ -117,7 +176,6 @@ export const HUD: React.FC<HUDProps> = ({ onRequestPointerLock }) => {
               transition={{ duration: 0.2, ease: 'easeOut' }}
               className="relative flex items-center justify-center"
             >
-              {/* Center Dot */}
               <div
                 className={`rounded-full transition-all duration-200 ${
                   activeInteractable
@@ -125,8 +183,6 @@ export const HUD: React.FC<HUDProps> = ({ onRequestPointerLock }) => {
                     : 'w-1.5 h-1.5 bg-[#FAF8F3] shadow-[0_0_4px_rgba(197,160,89,0.9)] border border-[#C5A059]/60'
                 }`}
               />
-
-              {/* Focus Ring when interactable */}
               {activeInteractable && (
                 <motion.div
                   initial={{ scale: 0.5, opacity: 0 }}
@@ -160,8 +216,8 @@ export const HUD: React.FC<HUDProps> = ({ onRequestPointerLock }) => {
         </div>
       )}
 
-      {/* -------------------- 2B. POSTURE EXIT PROMPT (SEATED / LYING) -------------------- */}
-      {isStarted && !isPaused && posture !== 'standing' && (
+      {/* -------------------- 4. POSTURE EXIT PROMPT (SEATED / LYING) -------------------- */}
+      {isStarted && !isPaused && posture !== 'standing' && !isPhotoMode && (
         <div className="fixed bottom-12 inset-x-0 z-30 flex justify-center pointer-events-auto">
           <motion.button
             initial={{ opacity: 0, y: 20 }}
@@ -187,14 +243,21 @@ export const HUD: React.FC<HUDProps> = ({ onRequestPointerLock }) => {
         </div>
       )}
 
-      {/* -------------------- 3. NAVIGATION UI ELEMENTS -------------------- */}
-      <RoomBanner />
-      <MiniMap />
-      <TeleportMenu />
+      {/* -------------------- 5. NAVIGATION UI ELEMENTS -------------------- */}
+      {!isPhotoMode && (
+        <>
+          <RoomBanner />
+          <MiniMap />
+          <TeleportMenu />
+        </>
+      )}
 
-      {/* -------------------- 4. PAUSE MENU OVERLAY -------------------- */}
+      {/* -------------------- 6. PHOTO MODE OVERLAY -------------------- */}
+      <PhotoModeOverlay />
+
+      {/* -------------------- 7. PAUSE MENU OVERLAY -------------------- */}
       <AnimatePresence>
-        {isStarted && isPaused && (
+        {isStarted && isPaused && !isPhotoMode && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -244,6 +307,17 @@ export const HUD: React.FC<HUDProps> = ({ onRequestPointerLock }) => {
                   >
                     <Play className="w-4 h-4 fill-current" />
                     Resume Walkthrough
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      resumeGame();
+                      setPhotoMode(true);
+                    }}
+                    className="w-full py-3 px-4 rounded-xl bg-[#FFFDF9] border border-[#DDD3C3] text-[#4A453B] font-medium text-xs tracking-wider uppercase flex items-center justify-center gap-2 hover:bg-[#F3EFE6] transition-colors cursor-pointer"
+                  >
+                    <Camera className="w-4 h-4 text-[#8C7443]" />
+                    Enter Photo Mode
                   </button>
 
                   <button
@@ -344,7 +418,7 @@ export const HUD: React.FC<HUDProps> = ({ onRequestPointerLock }) => {
                 </div>
               )}
 
-              {/* TAB 3: FAST TRAVEL IN PAUSE */}
+              {/* TAB 3: FAST TRAVEL */}
               {activeTab === 'teleport' && (
                 <div className="pt-1 max-h-[300px] overflow-y-auto space-y-2 pr-1">
                   {rooms.map((room) => (
@@ -416,9 +490,37 @@ export const HUD: React.FC<HUDProps> = ({ onRequestPointerLock }) => {
                 </div>
               )}
 
-              {/* TAB 5: SETTINGS */}
+              {/* TAB 5: ADVANCED SETTINGS & QUALITY */}
               {activeTab === 'settings' && (
                 <div className="pt-1 text-xs space-y-3.5 text-[#545046]">
+                  {/* Graphics Quality Preset */}
+                  <div>
+                    <div className="flex justify-between items-center mb-1.5">
+                      <div className="flex items-center gap-1.5 font-medium">
+                        <Sliders className="w-4 h-4 text-[#8C7443]" />
+                        <span>Graphics Preset</span>
+                      </div>
+                      <span className="font-mono font-bold text-[#8C7443] uppercase text-[11px]">
+                        {quality}
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-4 gap-1.5">
+                      {(['low', 'medium', 'high', 'ultra'] as QualityPreset[]).map((q) => (
+                        <button
+                          key={q}
+                          onClick={() => setQuality(q)}
+                          className={`py-1.5 rounded-lg text-xs font-semibold uppercase tracking-wider transition-colors cursor-pointer ${
+                            quality === q
+                              ? 'bg-[#D4AF37] text-white shadow-sm'
+                              : 'bg-[#EFECE1] text-[#545046] hover:bg-[#E5DFD4]'
+                          }`}
+                        >
+                          {q}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
                   {/* Master Volume */}
                   <div>
                     <div className="flex justify-between items-center mb-1.5">
@@ -458,6 +560,7 @@ export const HUD: React.FC<HUDProps> = ({ onRequestPointerLock }) => {
                     </div>
                   </div>
 
+                  {/* Look Sensitivity */}
                   <div>
                     <div className="flex justify-between mb-1.5">
                       <span className="font-medium">Look Sensitivity</span>
@@ -481,6 +584,7 @@ export const HUD: React.FC<HUDProps> = ({ onRequestPointerLock }) => {
                     />
                   </div>
 
+                  {/* Field of View */}
                   <div>
                     <div className="flex justify-between mb-1.5">
                       <span className="font-medium">Field of View (FOV)</span>
@@ -497,6 +601,27 @@ export const HUD: React.FC<HUDProps> = ({ onRequestPointerLock }) => {
                       onChange={(e) => updateSettings({ fov: parseInt(e.target.value, 10) })}
                       className="w-full accent-[#C5A059] cursor-pointer"
                     />
+                  </div>
+
+                  {/* Head-Bob & Fullscreen Toggles */}
+                  <div className="pt-1 flex items-center justify-between border-t border-[#ECE7DC]">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={settings.headBobEnabled ?? true}
+                        onChange={(e) => updateSettings({ headBobEnabled: e.target.checked })}
+                        className="rounded accent-[#C5A059] cursor-pointer"
+                      />
+                      <span>Head-Bob Animation</span>
+                    </label>
+
+                    <button
+                      onClick={toggleFullscreen}
+                      className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-[#EFECE1] hover:bg-[#E5DFD4] text-[#545046] transition-colors cursor-pointer text-xs uppercase"
+                    >
+                      {isFullscreen ? <Minimize className="w-3.5 h-3.5" /> : <Maximize className="w-3.5 h-3.5" />}
+                      <span>{isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'}</span>
+                    </button>
                   </div>
 
                   <button

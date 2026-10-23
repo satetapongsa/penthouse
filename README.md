@@ -33,6 +33,41 @@ Built with **Next.js App Router**, **TypeScript**, **Tailwind CSS**, and **Three
   - **Master Bath & Spa**: Monolithic freestanding mineral resin soaking tub with floor-mounted brass filler tap, walk-in rain shower with frameless glass panel, ceiling-mounted brass rain head and marble shampoo niche, double vanity with dual undermount basins, brass faucets, dual backlit arched mirrors, rolled waffle towels, white orchid, wall-hung toilet, and high frosted privacy window.
   - **Guest Bedroom Suite**: Double bed with fluted headboard, bedding, terracotta throw, nightstands with lamps, work desk with laptop, lamp, modernist desk chair, built-in wardrobe with brass handles, and gallery wall art.
   - **Guest Powder Room**: Monolithic fluted stone basin vanity, wall-mounted brass faucet, tall backlit pill mirror, luxury reed fragrance diffuser, and wall-hung minimalist toilet.
+- **High-End Visuals, City, Atmosphere & QA (Phase 6)**:
+  - **Procedural City Skyline Outside Windows**:
+    - Over 200 high-rise metropolitan skyscrapers rendered via high-performance `InstancedMesh` with procedural window grid textures.
+    - Windows dynamically illuminate with warm amber glow during sunset and nighttime.
+    - Sinuous metropolitan river channel with reflective water and riverbank parkland promenade.
+    - Synchronized flashing red aircraft warning beacons atop the tallest skyline spires.
+    - Dynamic atmospheric horizon with drifting procedural cloud decks and a distant flock of circling birds.
+  - **Day / Sunset / Night Dynamic Atmosphere**:
+    - Seamlessly switch or cycle between **Day**, **Sunset**, and **Night** from the top-right HUD pill or Photo Mode.
+    - Dynamic directional sun/moon angle, color temperature, and shadow intensity lerping in real time.
+    - Dynamic atmospheric fog and sky backdrop adapting to each time of day.
+    - Automatic interior lamp, downlight, fireplace, and underwater pool illumination activation at sunset and night.
+  - **Procedural Studio Lighting & Environment (No External HDR)**:
+    - Drei `Environment` powered entirely by procedural `Lightformer` softbox panels and rim-light rings.
+    - Soft shadow maps tailored to each room's floor plan.
+    - Floating airborne dust motes in sunbeams with natural Brownian drift.
+  - **Cinematic Post-Processing Stack**:
+    - Built with `@react-three/postprocessing` (`Bloom`, `Vignette`, ACES Filmic tone mapping).
+    - Smooth architectural bloom with adaptive thresholds for day, sunset, and night.
+    - Automatically scaled or bypassed on low quality for maximum FPS stability.
+  - **Quality Presets (Low / Medium / High / Ultra)**:
+    - **Low**: Maximum performance mode; shadows disabled, post-processing bypassed, 1.0 DPR, simplified building geometry.
+    - **Medium** (Default): 1024 shadow map, bloom and vignette, 256 reflector resolution, adaptive DPR.
+    - **High**: 2048 shadow map, full post-processing, 512 reflector resolution, dust particles, 1.5 max DPR.
+    - **Ultra**: 2048 soft shadows, full post-processing stack, 512 reflector, 210 buildings, up to 2.0 max DPR.
+  - **Architectural Photo Mode**:
+    - Dedicated camera viewfinder mode with rule-of-thirds composition grid.
+    - Focal length (FOV) slider (45° telephoto to 95° wide angle).
+    - Shutter capture button that generates and downloads an instant high-resolution PNG screenshot (`the-skyline-penthouse-[time].png`).
+  - **Comprehensive Settings**:
+    - Mouse look sensitivity & mobile touch look sensitivity sliders.
+    - Field of view (FOV) slider (65° to 90°).
+    - Master volume slider and instant mute toggle (`M` key or UI).
+    - Head-bob animation toggle for motion sickness prevention.
+    - Fullscreen toggle button.
 - **Interactions & Sound Engine (Phase 5)**:
   - **Procedural Web Audio API Synthesis Engine (Zero Audio Files)**:
     - **Ambient Generative Jazz**: Warm electric piano / synth pad chords cycling through rich jazz voicings with soft filter sweeps.
