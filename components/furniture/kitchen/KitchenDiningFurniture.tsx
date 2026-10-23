@@ -121,11 +121,11 @@ export const KitchenDiningFurniture: React.FC = () => {
           )}
         </group>
 
-        {/* 4 Bouclé Bar Stools (Seat Height 0.65m, Interactive Seating) */}
+        {/* 4 Interactive Bar Stool Sitting Triggers (Seat Height 0.65m) */}
         {[-1.2, -0.4, 0.4, 1.2].map((bx, idx) => (
           <group
-            key={`stool-${idx}`}
-            position={[bx, 0, -0.78]}
+            key={`stool-trigger-${idx}`}
+            position={[bx, 0.65, -0.78]}
             userData={{
               interactable: true,
               interactableId: `kitchen-stool-${idx}`,
@@ -142,22 +142,10 @@ export const KitchenDiningFurniture: React.FC = () => {
               },
             }}
           >
-            {/* Rounded Bouclé Seat Pad (Seat Height 0.65m) */}
-            <RoundedBox args={[0.42, 0.1, 0.42]} radius={0.04} smoothness={3} position={[0, 0.62, 0]} castShadow>
-              <meshStandardMaterial color={colors.cream} map={boucleTex} roughness={0.85} />
-            </RoundedBox>
-            {/* Brass Footrest Ring */}
-            <mesh position={[0, 0.24, 0]} rotation={[Math.PI / 2, 0, 0]}>
-              <torusGeometry args={[0.18, 0.01, 12, 24]} />
-              <meshStandardMaterial color={colors.brass} metalness={0.9} roughness={0.2} />
+            <mesh visible={false}>
+              <boxGeometry args={[0.48, 0.48, 0.48]} />
+              <meshBasicMaterial transparent opacity={0} />
             </mesh>
-            {/* Tapered Legs */}
-            {[[-0.14, -0.14], [0.14, -0.14], [-0.14, 0.14], [0.14, 0.14]].map(([lx, lz], lidx) => (
-              <mesh key={`leg-${lidx}`} position={[lx, 0.3, lz]}>
-                <cylinderGeometry args={[0.014, 0.01, 0.6, 10]} />
-                <meshStandardMaterial color={colors.brass} metalness={0.9} roughness={0.2} />
-              </mesh>
-            ))}
           </group>
         ))}
 
@@ -178,20 +166,6 @@ export const KitchenDiningFurniture: React.FC = () => {
             </mesh>
           </group>
         ))}
-
-        {/* Travertine Fruit Bowl with Lemons */}
-        <group position={[0, 0.9, 0.28]}>
-          <mesh castShadow>
-            <cylinderGeometry args={[0.18, 0.09, 0.06, 20]} />
-            <meshStandardMaterial color={colors.travertine} roughness={0.4} />
-          </mesh>
-          {[-0.05, 0.04, 0.0].map((lx, idx) => (
-            <mesh key={`lemon-${idx}`} position={[lx, 0.05, (idx === 1 ? -0.04 : 0.03)]} castShadow>
-              <sphereGeometry args={[0.032, 10, 10]} />
-              <meshStandardMaterial color="#E8C842" roughness={0.5} />
-            </mesh>
-          ))}
-        </group>
 
         {/* Layered End-Grain Wood Cutting Boards */}
         <group position={[-1.4, 0.9, -0.2]} rotation={[0, 0.1, 0]}>

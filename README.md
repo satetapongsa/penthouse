@@ -12,7 +12,7 @@ An immersive first-person 3D architectural walkthrough of an ultra-luxury pentho
 
 **The Skyline Penthouse** redefines architectural visualization on the web. Built with modern WebGL and physics, the player navigates an open-concept 280 m² luxury residence and a 105 m² private sky terrace in pure first-person perspective. The experience features real-time lighting transitions, interactive appliances, surface-aware procedural sound design, and an ivory travertine and bouclé aesthetic.
 
-The entire experience is **100% procedural in code**: zero external 3D models (GLB), zero external HDR skyboxes, zero image textures, and zero audio files. Everything is synthesized in real time in the client.
+The architectural shell, lighting, and sound are synthesized procedurally in code, while focal luxury furniture, lighting, and decor feature real photorealistic 3D models from Poly Haven (CC0), optimized with `@gltf-transform/cli` with WebP textures and `meshopt` geometry compression. Zero external HDR skyboxes, zero image textures, zero hotlinking, and zero backend required.
 
 ---
 
@@ -225,6 +225,35 @@ vercel --prod
 ├── store/
 │   └── useGameStore.ts               # Zustand store for world, player & UI state
 └── package.json
+```
+
+---
+
+## 3D Assets
+
+Key luxury furniture, seating, lighting fixtures, botanical plants, and decorative tabletop props are real photorealistic 3D assets sourced from **[Poly Haven](https://polyhaven.com/)** under **Creative Commons 0 (CC0) / Public Domain**.
+
+- **Zero Hotlinking**: All models are downloaded once and committed locally to `/public/models/`.
+- **Attribution & Catalog**: Complete list of model sources, Poly Haven links, and CC0 licenses is maintained in [`public/models/CREDITS.md`](public/models/CREDITS.md).
+- **Optimization Pipeline**: Models are processed through an automated `@gltf-transform` pipeline:
+  - Deduplication, scene pruning, and vertex welding.
+  - Geometry simplification: < 8,000 triangles for furniture, < 3,000 for tabletop props.
+  - Texture optimization: resized to 256–1024px and encoded in modern WebP.
+  - Geometry compression using `meshopt` (`KHR_mesh_quantization`, `EXT_meshopt_compression`).
+  - Total bundle size across all 18 models is **2.77 MB** (budget < 15 MB).
+
+### Re-running the Pipeline
+
+To fetch and re-optimize the models from Poly Haven at any time:
+
+```bash
+# 1. Query the Poly Haven API and download 1k glTF assets
+npm run models:fetch
+# or: node scripts/fetch-models.mjs
+
+# 2. Run the optimization pipeline and generate comparison report
+npm run models:optimize
+# or: node scripts/optimize-models.mjs
 ```
 
 ---

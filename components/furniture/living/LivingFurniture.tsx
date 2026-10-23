@@ -141,30 +141,6 @@ export const LivingFurniture: React.FC = () => {
         <ScentedGlassCandle position={[0.7, 0.76, 0]} />
       </group>
 
-      {/* -------------------- 5. NESTED TRAVERTINE & CALACATTA COFFEE TABLES -------------------- */}
-      <group position={[1.9, 0, -1.4]}>
-        <RigidBody type="fixed" colliders={false}>
-          <CuboidCollider args={[0.72, 0.2, 0.44]} position={[0, 0.2, 0]} />
-        </RigidBody>
-        {/* Primary Calacatta Marble Table */}
-        <RoundedBox args={[1.36, 0.36, 0.8]} radius={0.04} smoothness={4} position={[0, 0.18, 0]} castShadow receiveShadow>
-          <meshPhysicalMaterial color={colors.calacatta} map={marbleTex} roughness={0.15} clearcoat={0.9} />
-        </RoundedBox>
-        <mesh position={[0, 0.015, 0]}>
-          <boxGeometry args={[1.28, 0.03, 0.72]} />
-          <meshStandardMaterial color={colors.brass} metalness={0.88} roughness={0.22} />
-        </mesh>
-        {/* Secondary Lower Fluted Oak Nested Table */}
-        <group position={[0.7, 0.12, 0.3]}>
-          <RoundedBox args={[0.6, 0.24, 0.6]} radius={0.03} smoothness={3} castShadow receiveShadow>
-            <meshStandardMaterial color={colors.paleOak} map={oakTex} roughness={0.45} />
-          </RoundedBox>
-        </group>
-        {/* Decor on Coffee Table */}
-        <LuxuryBookStack position={[-0.3, 0.36, 0.05]} rotationY={-0.1} />
-        <ScentedGlassCandle position={[0.3, 0.36, -0.1]} />
-      </group>
-
       {/* -------------------- 6. ROUND BOUCLÉ OTTOMAN / POUF -------------------- */}
       <group position={[3.8, 0, -2.6]}>
         <RigidBody type="fixed" colliders={false}>
@@ -179,33 +155,6 @@ export const LivingFurniture: React.FC = () => {
           <meshStandardMaterial color={colors.brass} metalness={0.9} roughness={0.2} />
         </mesh>
       </group>
-
-      {/* -------------------- 7. CURVED BOUCLÉ ACCENT ARMCHAIRS -------------------- */}
-      {[-0.6, 4.3].map((cx, idx) => (
-        <group
-          key={`armchair-${idx}`}
-          position={[cx, 0, -1.2]}
-          rotation={[0, idx === 0 ? Math.PI / 4 : -Math.PI / 4, 0]}
-        >
-          <RigidBody type="fixed" colliders={false}>
-            <CuboidCollider args={[0.44, 0.38, 0.44]} position={[0, 0.38, 0]} />
-          </RigidBody>
-          {/* Brass Swivel Base */}
-          <mesh position={[0, 0.04, 0]}>
-            <cylinderGeometry args={[0.3, 0.3, 0.08, 20]} />
-            <meshStandardMaterial color={colors.brass} metalness={0.88} roughness={0.25} />
-          </mesh>
-          {/* Rounded Thick Bouclé Seat Cushion (Seat Height 0.42m) */}
-          <RoundedBox args={[0.74, 0.26, 0.74]} radius={0.06} smoothness={4} position={[0, 0.28, 0]} castShadow receiveShadow>
-            <meshStandardMaterial color={colors.cream} map={boucleTex} roughness={0.85} />
-          </RoundedBox>
-          {/* Curved Barrel Backrest */}
-          <mesh position={[0, 0.54, -0.26]} rotation={[0, -Math.PI / 2, 0]} castShadow receiveShadow>
-            <cylinderGeometry args={[0.38, 0.38, 0.38, 24, 1, false, 0, Math.PI]} />
-            <meshStandardMaterial color={colors.cream} map={boucleTex} roughness={0.85} />
-          </mesh>
-        </group>
-      ))}
 
       {/* -------------------- 8. WINDOW BENCH WITH CUSHION -------------------- */}
       <group position={[-2.4, 0, -5.2]} rotation={[0, Math.PI / 2, 0]}>
@@ -222,7 +171,6 @@ export const LivingFurniture: React.FC = () => {
 
       {/* -------------------- 9. BOTANICAL HIGHLIGHTS -------------------- */}
       <group ref={plantGroupRef}>
-        <LuxuryPottedTree position={[6.6, 0, -5.2]} type="olive" scale={1.1} />
         <LuxuryPottedTree position={[-2.8, 0, 1.2]} type="fiddle" scale={0.9} />
       </group>
 

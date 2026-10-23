@@ -56,44 +56,6 @@ export const DiningTableSet: React.FC = () => {
           </group>
         ))}
 
-        {/* 8 Designer Dining Chairs with Curved Bouclé Backs (Seat Height 0.45m) */}
-        {[-1.25, -0.42, 0.42, 1.25].map((cx, idx) => (
-          <group key={`chair-north-${idx}`} position={[cx, 0, -0.72]}>
-            {/* Rounded Bouclé Seat Cushion */}
-            <RoundedBox args={[0.46, 0.08, 0.46]} radius={0.03} smoothness={3} position={[0, 0.45, 0]} castShadow>
-              <meshStandardMaterial color={colors.cream} map={boucleTex} roughness={0.85} />
-            </RoundedBox>
-            {/* Curved Padded Backrest */}
-            <RoundedBox args={[0.44, 0.38, 0.06]} radius={0.03} smoothness={3} position={[0, 0.68, -0.2]} castShadow>
-              <meshStandardMaterial color={colors.cream} map={boucleTex} roughness={0.85} />
-            </RoundedBox>
-            {/* Tapered Brass Legs */}
-            {[[-0.18, -0.18], [0.18, -0.18], [-0.18, 0.18], [0.18, 0.18]].map(([lx, lz], lidx) => (
-              <mesh key={`leg-n-${lidx}`} position={[lx, 0.22, lz]}>
-                <cylinderGeometry args={[0.015, 0.01, 0.44, 10]} />
-                <meshStandardMaterial color={colors.brass} metalness={0.88} roughness={0.25} />
-              </mesh>
-            ))}
-          </group>
-        ))}
-
-        {[-1.25, -0.42, 0.42, 1.25].map((cx, idx) => (
-          <group key={`chair-south-${idx}`} position={[cx, 0, 0.72]} rotation={[0, Math.PI, 0]}>
-            <RoundedBox args={[0.46, 0.08, 0.46]} radius={0.03} smoothness={3} position={[0, 0.45, 0]} castShadow>
-              <meshStandardMaterial color={colors.cream} map={boucleTex} roughness={0.85} />
-            </RoundedBox>
-            <RoundedBox args={[0.44, 0.38, 0.06]} radius={0.03} smoothness={3} position={[0, 0.68, -0.2]} castShadow>
-              <meshStandardMaterial color={colors.cream} map={boucleTex} roughness={0.85} />
-            </RoundedBox>
-            {[[-0.18, -0.18], [0.18, -0.18], [-0.18, 0.18], [0.18, 0.18]].map(([lx, lz], lidx) => (
-              <mesh key={`leg-s-${lidx}`} position={[lx, 0.22, lz]}>
-                <cylinderGeometry args={[0.015, 0.01, 0.44, 10]} />
-                <meshStandardMaterial color={colors.brass} metalness={0.88} roughness={0.25} />
-              </mesh>
-            ))}
-          </group>
-        ))}
-
         {/* 6 Luxury Dining Place Settings */}
         {[-1.25, 0, 1.25].flatMap((px) => [
           { x: px, z: -0.38, rot: 0 },
@@ -101,30 +63,6 @@ export const DiningTableSet: React.FC = () => {
         ]).map((pos, pidx) => (
           <DiningPlaceSetting key={`place-setting-${pidx}`} position={[pos.x, 0.75, pos.z]} rotationY={pos.rot} />
         ))}
-
-        {/* Centerpiece: Low Travertine Bowl with Florals & Tea Candles */}
-        <group position={[0, 0.75, 0]}>
-          <mesh position={[0, 0.035, 0]} castShadow>
-            <cylinderGeometry args={[0.26, 0.1, 0.07, 24]} />
-            <meshStandardMaterial color={colors.travertine} roughness={0.4} />
-          </mesh>
-          <mesh position={[0, 0.08, 0]}>
-            <sphereGeometry args={[0.08, 12, 12]} />
-            <meshStandardMaterial color={colors.sage} roughness={0.7} />
-          </mesh>
-          {[-0.45, 0.45].map((tx, tidx) => (
-            <group key={`candle-holder-${tidx}`} position={[tx, 0, 0]}>
-              <mesh position={[0, 0.02, 0]} castShadow>
-                <cylinderGeometry args={[0.035, 0.04, 0.04, 16]} />
-                <meshStandardMaterial color={colors.brass} metalness={0.9} roughness={0.2} />
-              </mesh>
-              <mesh position={[0, 0.05, 0]}>
-                <sphereGeometry args={[0.005, 8, 8]} />
-                <meshBasicMaterial color="#FFDD80" />
-              </mesh>
-            </group>
-          ))}
-        </group>
       </group>
 
       {/* -------------------- 3. ILLUMINATED PALE OAK & BRASS WINE CABINET (BRIGHT THEME FIX) -------------------- */}

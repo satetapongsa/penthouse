@@ -16,6 +16,7 @@ import { MasterBathroomFurniture } from '@/components/furniture/bathroom/MasterB
 import { GuestBedroomFurniture } from '@/components/furniture/guest/GuestBedroomFurniture';
 import { PowderRoomFurniture } from '@/components/furniture/powder/PowderRoomFurniture';
 import { TerraceFurniture } from '@/components/furniture/terrace/TerraceFurniture';
+import { PenthouseModelsManager } from '@/components/furniture/models/PenthouseModelsManager';
 import { CitySkyline } from '@/components/environment/CitySkyline';
 import { AtmosphericLighting } from '@/components/environment/AtmosphericLighting';
 
@@ -203,6 +204,9 @@ export const PenthouseShell: React.FC = () => {
       <group visible={visibleRooms.has('terrace')}>
         <TerraceFurniture />
       </group>
+
+      {/* -------------------- 5. PHOTOREALISTIC CC0 3D FURNITURE & PROPS -------------------- */}
+      <PenthouseModelsManager />
 
       {/* Jacuzzi Rim Coping on Terrace */}
       <group position={[10.75, 0.25, -9.5]} visible={visibleRooms.has('terrace')}>
