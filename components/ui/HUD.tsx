@@ -40,7 +40,7 @@ export const HUD: React.FC<HUDProps> = ({ onRequestPointerLock }) => {
   const showPerf = useGameStore((s) => s.showPerf);
   const togglePerf = useGameStore((s) => s.togglePerf);
 
-  const settings = useGameStore((s) => s.settings);
+  const muted = useGameStore((s) => s.muted);
   const toggleMute = useGameStore((s) => s.toggleMute);
   const muteToast = useGameStore((s) => s.muteToast);
 
@@ -124,17 +124,18 @@ export const HUD: React.FC<HUDProps> = ({ onRequestPointerLock }) => {
             <Camera className="w-4 h-4 text-[#8C7443]" />
           </button>
 
-          {/* Audio Mute Button (Volume2 / VolumeX) */}
+          {/* Speaker Audio Mute Button */}
           <button
             onClick={toggleMute}
-            title={settings.isMuted ? 'Unmute Audio (M)' : 'Mute Audio (M)'}
+            aria-label={muted ? 'Sound on (M)' : 'Sound off (M)'}
+            title={muted ? 'Sound on (M)' : 'Sound off (M)'}
             className={`w-9 h-9 rounded-full backdrop-blur-md border transition-all flex items-center justify-center cursor-pointer shadow-lg ${
-              settings.isMuted
+              muted
                 ? 'bg-[#2E1A1A]/90 border-red-400/60 text-red-400 hover:bg-[#3D2222]'
                 : 'bg-[#FFFDF9]/90 border-[#C5A059]/40 text-[#4A453B] hover:bg-[#F5EFE6]'
             }`}
           >
-            {settings.isMuted ? (
+            {muted ? (
               <VolumeX className="w-4 h-4 text-red-500" />
             ) : (
               <Volume2 className="w-4 h-4 text-[#8C7443]" />
@@ -161,11 +162,11 @@ export const HUD: React.FC<HUDProps> = ({ onRequestPointerLock }) => {
           <h1 className="font-serif text-lg tracking-widest text-[#2D2A26] uppercase">
             The Skyline Penthouse
           </h1>
-          {/* Persistent Muted Indicator in HUD corner */}
-          {settings.isMuted && (
-            <div className="mt-1.5 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#1A1816]/85 border border-red-500/40 text-red-300 text-[10px] font-mono tracking-wider">
+          {/* Always-visible Small Muted Indicator Icon in HUD Corner */}
+          {muted && (
+            <div className="mt-1.5 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#1A1816]/85 border border-red-500/40 text-red-300 text-[10px] font-mono tracking-wider pointer-events-none">
               <VolumeX className="w-3 h-3 text-red-400" />
-              <span>SOUND MUTED (M)</span>
+              <span>MUTED (M)</span>
             </div>
           )}
         </div>
@@ -181,7 +182,7 @@ export const HUD: React.FC<HUDProps> = ({ onRequestPointerLock }) => {
             transition={{ duration: 0.2 }}
             className="fixed top-20 left-1/2 -translate-x-1/2 z-50 pointer-events-none flex items-center gap-2 px-4 py-2 rounded-full bg-[#1A1816]/90 border border-[#C5A059]/50 shadow-2xl backdrop-blur-md text-[#FAF8F3] text-xs font-mono tracking-wider select-none"
           >
-            {settings.isMuted ? (
+            {muted ? (
               <VolumeX className="w-4 h-4 text-red-400" />
             ) : (
               <Volume2 className="w-4 h-4 text-[#D4AF37]" />

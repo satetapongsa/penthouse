@@ -1,5 +1,6 @@
 /**
  * Continuous Web Audio Loops (Wind, Running Water, Fireplace, Breathing, Ambient Jazz)
+ * 100% procedural synthesis with CPU-saving mute pause/resume.
  */
 
 import {
@@ -23,11 +24,29 @@ export class AudioLoopsManager {
 
   private musicInterval: number | null = null;
   private isMusicPlaying = false;
+  private isMuted = false;
+  private chordIndex = 0;
 
   public setNodes(ctx: AudioContext, sfxGain: GainNode, musicGain: GainNode): void {
     this.ctx = ctx;
     this.sfxGain = sfxGain;
     this.musicGain = musicGain;
+  }
+
+  public setMuted(muted: boolean): void {
+    this.isMuted = muted;
+    if (muted) {
+      // Pause generative music interval to conserve CPU while muted
+      if (this.musicInterval) {
+        clearInterval(this.musicInterval);
+        this.musicInterval = null;
+      }
+    } else {
+      // Resume generative music interval cleanly when unmuted
+      if (this.isMusicPlaying && !this.musicInterval) {
+        this.scheduleAmbientMusic();
+      }
+    }
   }
 
   public setWind(active: boolean): void {
@@ -55,14 +74,20 @@ export class AudioLoopsManager {
 
       const timer = window.setInterval(() => {
         if (!this.windNode || !this.ctx) return;
-        this.windNode.filter.frequency.setTargetAtTime(280 + Math.random() * 320, this.ctx.currentTime, 1.4);
+        this.windNode.filter.frequency.setTargetAtTime(
+          280 + Math.random() * 320,
+          this.ctx.currentTime,
+          1.4
+        );
       }, 2000);
 
       this.windNode = { gain, filter, timer };
     } else if (this.windNode) {
       if (this.windNode.timer) clearInterval(this.windNode.timer);
       this.windNode.gain.gain.linearRampToValueAtTime(0.001, this.ctx.currentTime + 0.8);
-      setTimeout(() => { this.windNode = null; }, 900);
+      setTimeout(() => {
+        this.windNode = null;
+      }, 900);
     }
   }
 
@@ -92,7 +117,9 @@ export class AudioLoopsManager {
       this.faucetNode = { gain };
     } else if (this.faucetNode) {
       this.faucetNode.gain.gain.linearRampToValueAtTime(0.001, this.ctx.currentTime + 0.3);
-      setTimeout(() => { this.faucetNode = null; }, 350);
+      setTimeout(() => {
+        this.faucetNode = null;
+      }, 350);
     }
   }
 
@@ -121,12 +148,15 @@ export class AudioLoopsManager {
       this.showerNode = { gain };
     } else if (this.showerNode) {
       this.showerNode.gain.gain.linearRampToValueAtTime(0.001, this.ctx.currentTime + 0.4);
-      setTimeout(() => { this.showerNode = null; }, 450);
+      setTimeout(() => {
+        this.showerNode = null;
+      }, 450);
     }
   }
 
   public setFireplace(active: boolean, isMuted = false): void {
     if (!this.ctx || !this.sfxGain) return;
+    this.isMuted = isMuted;
     if (active) {
       if (this.fireNode) return;
       const buffer = createBrownianNoiseBuffer(this.ctx, 3.0);
@@ -148,7 +178,7 @@ export class AudioLoopsManager {
       source.start();
 
       const timer = window.setInterval(() => {
-        if (!this.fireNode || !this.ctx || isMuted) return;
+        if (!this.fireNode || !this.ctx || this.isMuted) return;
         if (Math.random() > 0.4) {
           const now = this.ctx.currentTime;
           const popOsc = this.ctx.createOscillator();
@@ -169,7 +199,9 @@ export class AudioLoopsManager {
     } else if (this.fireNode) {
       if (this.fireNode.timer) clearInterval(this.fireNode.timer);
       this.fireNode.gain.gain.linearRampToValueAtTime(0.001, this.ctx.currentTime + 0.5);
-      setTimeout(() => { this.fireNode = null; }, 550);
+      setTimeout(() => {
+        this.fireNode = null;
+      }, 550);
     }
   }
 
@@ -199,7 +231,9 @@ export class AudioLoopsManager {
       this.poolNode = { gain };
     } else if (this.poolNode) {
       this.poolNode.gain.gain.linearRampToValueAtTime(0.001, this.ctx.currentTime + 0.6);
-      setTimeout(() => { this.poolNode = null; }, 650);
+      setTimeout(() => {
+        this.poolNode = null;
+      }, 650);
     }
   }
 
@@ -235,49 +269,59 @@ export class AudioLoopsManager {
     } else if (this.breathingNode) {
       if (this.breathingNode.timer) clearInterval(this.breathingNode.timer);
       this.breathingNode.gain.gain.linearRampToValueAtTime(0.001, this.ctx.currentTime + 0.8);
-      setTimeout(() => { this.breathingNode = null; }, 850);
+      setTimeout(() => {
+        this.breathingNode = null;
+      }, 850);
     }
   }
 
+  private playCurrentChord(): void {
+    if (!this.isMusicPlaying || !this.ctx || !this.musicGain || this.isMuted) return;
+    const now = this.ctx.currentTime;
+    const chord = JAZZ_CHORD_FREQUENCIES[this.chordIndex];
+    this.chordIndex = (this.chordIndex + 1) % JAZZ_CHORD_FREQUENCIES.length;
+    const chordDuration = 5.8;
+
+    chord.forEach((freq, i) => {
+      const osc = this.ctx!.createOscillator();
+      const noteGain = this.ctx!.createGain();
+      const noteFilter = this.ctx!.createBiquadFilter();
+
+      osc.type = i === 0 ? 'sine' : i % 2 === 0 ? 'triangle' : 'sine';
+      osc.frequency.setValueAtTime(freq, now);
+      noteFilter.type = 'lowpass';
+      noteFilter.frequency.setValueAtTime(550 + i * 80, now);
+
+      const peakGain = (0.045 / Math.sqrt(chord.length)) * (i === 0 ? 1.3 : 1.0);
+      noteGain.gain.setValueAtTime(0.0001, now);
+      noteGain.gain.linearRampToValueAtTime(peakGain, now + 1.2 + i * 0.1);
+      noteGain.gain.exponentialRampToValueAtTime(peakGain * 0.7, now + 3.5);
+      noteGain.gain.linearRampToValueAtTime(0.0001, now + chordDuration);
+
+      osc.connect(noteFilter);
+      noteFilter.connect(noteGain);
+      noteGain.connect(this.musicGain!);
+
+      osc.start(now);
+      osc.stop(now + chordDuration + 0.1);
+    });
+  }
+
+  private scheduleAmbientMusic(): void {
+    if (this.musicInterval) clearInterval(this.musicInterval);
+    this.playCurrentChord();
+    this.musicInterval = window.setInterval(() => {
+      this.playCurrentChord();
+    }, 5200);
+  }
+
   public startAmbientMusic(isMuted = false): void {
-    if (this.isMusicPlaying || !this.ctx || !this.musicGain) return;
+    this.isMuted = isMuted;
     this.isMusicPlaying = true;
-    let chordIndex = 0;
-
-    const playChord = () => {
-      if (!this.isMusicPlaying || !this.ctx || !this.musicGain || isMuted) return;
-      const now = this.ctx.currentTime;
-      const chord = JAZZ_CHORD_FREQUENCIES[chordIndex];
-      chordIndex = (chordIndex + 1) % JAZZ_CHORD_FREQUENCIES.length;
-      const chordDuration = 5.8;
-
-      chord.forEach((freq, i) => {
-        const osc = this.ctx!.createOscillator();
-        const noteGain = this.ctx!.createGain();
-        const noteFilter = this.ctx!.createBiquadFilter();
-
-        osc.type = i === 0 ? 'sine' : i % 2 === 0 ? 'triangle' : 'sine';
-        osc.frequency.setValueAtTime(freq, now);
-        noteFilter.type = 'lowpass';
-        noteFilter.frequency.setValueAtTime(550 + i * 80, now);
-
-        const peakGain = (0.045 / Math.sqrt(chord.length)) * (i === 0 ? 1.3 : 1.0);
-        noteGain.gain.setValueAtTime(0.0001, now);
-        noteGain.gain.linearRampToValueAtTime(peakGain, now + 1.2 + i * 0.1);
-        noteGain.gain.exponentialRampToValueAtTime(peakGain * 0.7, now + 3.5);
-        noteGain.gain.linearRampToValueAtTime(0.0001, now + chordDuration);
-
-        osc.connect(noteFilter);
-        noteFilter.connect(noteGain);
-        noteGain.connect(this.musicGain!);
-
-        osc.start(now);
-        osc.stop(now + chordDuration + 0.1);
-      });
-    };
-
-    playChord();
-    this.musicInterval = window.setInterval(playChord, 5200);
+    if (!this.ctx || !this.musicGain) return;
+    if (!this.isMuted) {
+      this.scheduleAmbientMusic();
+    }
   }
 
   public stopAmbientMusic(): void {

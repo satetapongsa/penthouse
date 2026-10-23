@@ -111,6 +111,10 @@ export interface GameStoreState {
   showPerf: boolean;
   muteToast: string | null;
 
+  // Dedicated Audio State (synced with settings)
+  muted: boolean;
+  volume: number;
+
   controls: ControlState;
   joystickVector: { x: number; y: number };
   lookDelta: { x: number; y: number };
@@ -197,6 +201,9 @@ export interface GameStoreActions {
   updateSettings: (partial: Partial<SettingsState>) => void;
   resetSettings: () => void;
   toggleMute: () => void;
+  setMute: (muted: boolean) => void;
+  setVolume: (volume: number) => void;
+  hydrateAudioSettings: () => void;
   setMuteToast: (toast: string | null) => void;
 }
 

@@ -2,7 +2,7 @@
 
 import React, { useRef, useState, useCallback, useEffect } from 'react';
 import { useGameStore } from '@/store/useGameStore';
-import { ArrowUp, ChevronDown, Flame, Pause, Sparkles } from 'lucide-react';
+import { ArrowUp, ChevronDown, Flame, Pause, Sparkles, Volume2, VolumeX } from 'lucide-react';
 
 export const MobileControls: React.FC = () => {
   const isStarted = useGameStore((s) => s.isStarted);
@@ -13,6 +13,9 @@ export const MobileControls: React.FC = () => {
   const addLookDelta = useGameStore((s) => s.addLookDelta);
   const setControl = useGameStore((s) => s.setControl);
   const pauseGame = useGameStore((s) => s.pauseGame);
+
+  const muted = useGameStore((s) => s.muted);
+  const toggleMute = useGameStore((s) => s.toggleMute);
 
   const controls = useGameStore((s) => s.controls);
 
@@ -74,8 +77,7 @@ export const MobileControls: React.FC = () => {
 
           setKnobPos({ x: clampedDx, y: clampedDy });
 
-          // Normalize vector (-1 to 1)
-          // Y is inverted: dragging up is forward (positive y in our game forward convention)
+          // Normalize vector (-1 to 1); Dragging up is forward (+y)
           const normX = clampedDx / JOYSTICK_MAX_RADIUS;
           const normY = -clampedDy / JOYSTICK_MAX_RADIUS;
 
@@ -177,11 +179,23 @@ export const MobileControls: React.FC = () => {
 
   return (
     <div className="fixed inset-0 z-40 pointer-events-none select-none touch-none">
-      {/* Top Bar for Mobile Pause */}
-      <div className="absolute top-4 right-4 pointer-events-auto">
+      {/* Top Bar for Mobile Pause & Mute (at least 44px buttons, away from joystick & action pads) */}
+      <div className="absolute top-4 right-4 pointer-events-auto flex items-center gap-2">
+        <button
+          onClick={toggleMute}
+          className={`w-11 h-11 rounded-full backdrop-blur-md border flex items-center justify-center active:scale-95 shadow-md cursor-pointer ${
+            muted
+              ? 'bg-[#2E1A1A]/90 border-red-400/60 text-red-400'
+              : 'bg-[#FFFDF9]/85 border-[#C5A059]/40 text-[#4A453B]'
+          }`}
+          aria-label={muted ? 'Unmute Audio' : 'Mute Audio'}
+        >
+          {muted ? <VolumeX className="w-5 h-5 text-red-500" /> : <Volume2 className="w-5 h-5 text-[#8C7443]" />}
+        </button>
+
         <button
           onClick={pauseGame}
-          className="w-11 h-11 rounded-full bg-[#FFFDF9]/85 backdrop-blur-md border border-[#C5A059]/40 flex items-center justify-center text-[#4A453B] active:scale-95 shadow-md"
+          className="w-11 h-11 rounded-full bg-[#FFFDF9]/85 backdrop-blur-md border border-[#C5A059]/40 flex items-center justify-center text-[#4A453B] active:scale-95 shadow-md cursor-pointer"
           aria-label="Pause Walkthrough"
         >
           <Pause className="w-5 h-5 text-[#8C7443]" />

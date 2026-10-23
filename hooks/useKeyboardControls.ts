@@ -26,11 +26,20 @@ export function useKeyboardControls() {
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Don't capture inputs if user is typing in an input/textarea
+      // Don't capture inputs if user is typing in an input, textarea or contentEditable
       if (
         document.activeElement instanceof HTMLInputElement ||
-        document.activeElement instanceof HTMLTextAreaElement
+        document.activeElement instanceof HTMLTextAreaElement ||
+        (document.activeElement as HTMLElement)?.isContentEditable
       ) {
+        return;
+      }
+
+      // 'M' key toggles audio mute (ignores key repeat, works in photo mode, pointer lock and menus)
+      if (e.code === 'KeyM') {
+        if (e.repeat) return;
+        e.preventDefault();
+        useGameStore.getState().toggleMute();
         return;
       }
 
@@ -49,13 +58,6 @@ export function useKeyboardControls() {
             pauseGame();
           }
         }
-        return;
-      }
-
-      // 'M' key toggles audio mute with toast notification (works while pointer is locked)
-      if (e.code === 'KeyM') {
-        e.preventDefault();
-        useGameStore.getState().toggleMute();
         return;
       }
 

@@ -15,35 +15,29 @@ export * from './gameStoreTypes';
 
 const AUDIO_STORAGE_KEY = 'penthouse_audio_settings';
 
-const getInitialAudioSettings = () => {
-  if (typeof window === 'undefined') return { volume: 0.7, isMuted: false };
+const readSavedAudio = () => {
+  if (typeof window === 'undefined') return null;
   try {
     const raw = localStorage.getItem(AUDIO_STORAGE_KEY);
     if (raw) {
       const parsed = JSON.parse(raw);
       return {
         volume: typeof parsed.volume === 'number' ? parsed.volume : 0.7,
-        isMuted: typeof parsed.isMuted === 'boolean' ? parsed.isMuted : false,
+        muted: typeof parsed.muted === 'boolean' ? parsed.muted : !!parsed.isMuted,
       };
     }
-  } catch {
-    // Ignore error in restricted/SSR environments
-  }
-  return { volume: 0.7, isMuted: false };
+  } catch {}
+  return null;
 };
 
-const saveAudioSettings = (volume: number, isMuted: boolean) => {
+const saveAudioSettings = (volume: number, muted: boolean) => {
   if (typeof window === 'undefined') return;
   try {
-    localStorage.setItem(AUDIO_STORAGE_KEY, JSON.stringify({ volume, isMuted }));
-  } catch {
-    // Ignore quota/security errors
-  }
+    localStorage.setItem(AUDIO_STORAGE_KEY, JSON.stringify({ volume, muted, isMuted: muted }));
+  } catch {}
 };
 
 let toastTimeout: ReturnType<typeof setTimeout> | null = null;
-
-const initialAudio = getInitialAudioSettings();
 
 export const useGameStore = create<GameStore>((set, get) => ({
   gameState: 'intro',
@@ -59,6 +53,9 @@ export const useGameStore = create<GameStore>((set, get) => ({
   screenshotTrigger: 0,
   showPerf: false,
   muteToast: null,
+
+  muted: false,
+  volume: 0.7,
 
   controls: { ...INITIAL_CONTROLS },
   joystickVector: { x: 0, y: 0 },
@@ -88,19 +85,30 @@ export const useGameStore = create<GameStore>((set, get) => ({
   jacuzziJetsOn: false,
   isNearJacuzzi: false,
 
-  settings: {
-    ...INITIAL_SETTINGS,
-    volume: initialAudio.volume,
-    isMuted: initialAudio.isMuted,
-  },
+  settings: { ...INITIAL_SETTINGS, volume: 0.7, isMuted: false },
 
   setGameState: (gameState) => set({ gameState }),
 
+  hydrateAudioSettings: () => {
+    const saved = readSavedAudio();
+    if (saved) {
+      set((state) => ({
+        volume: saved.volume,
+        muted: saved.muted,
+        settings: { ...state.settings, volume: saved.volume, isMuted: saved.muted },
+      }));
+      audioEngine.setVolume(saved.volume);
+      audioEngine.setMuted(saved.muted);
+    }
+  },
+
   startGame: () => {
-    const current = get().settings;
-    audioEngine.init(current.volume, current.isMuted);
-    audioEngine.startAmbientMusic();
-    audioEngine.setFireplace(get().fireplaceOn);
+    const vol = get().volume;
+    const mut = get().muted;
+    audioEngine.init(vol, mut);
+    audioEngine.resumeContext();
+    audioEngine.startAmbientMusic(mut);
+    audioEngine.setFireplace(get().fireplaceOn, mut);
     set({ gameState: 'playing', isStarted: true, isPaused: false });
   },
 
@@ -115,6 +123,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
   },
 
   resumeGame: () => {
+    audioEngine.resumeContext();
     set({
       gameState: 'playing',
       isPaused: false,
@@ -170,69 +179,40 @@ export const useGameStore = create<GameStore>((set, get) => ({
   togglePerf: () => set((state) => ({ showPerf: !state.showPerf })),
   setShowPerf: (showPerf) => set({ showPerf }),
 
-  setControl: (key, active) => {
-    set((state) => ({
-      controls: { ...state.controls, [key]: active },
-    }));
-  },
-
+  setControl: (key, active) => set((s) => ({ controls: { ...s.controls, [key]: active } })),
   setJoystickVector: (joystickVector) => set({ joystickVector }),
 
-  addLookDelta: (delta) => {
-    set((state) => ({
-      lookDelta: {
-        x: state.lookDelta.x + delta.x,
-        y: state.lookDelta.y + delta.y,
-      },
-    }));
-  },
+  addLookDelta: (delta) => set((s) => ({
+    lookDelta: { x: s.lookDelta.x + delta.x, y: s.lookDelta.y + delta.y },
+  })),
 
   consumeLookDelta: () => {
     const current = get().lookDelta;
-    if (current.x !== 0 || current.y !== 0) {
-      set({ lookDelta: { x: 0, y: 0 } });
-    }
+    if (current.x !== 0 || current.y !== 0) set({ lookDelta: { x: 0, y: 0 } });
     return current;
   },
 
   setCurrentRoomId: (currentRoomId) => {
-    if (get().currentRoomId !== currentRoomId) {
-      set({ currentRoomId });
-    }
+    if (get().currentRoomId !== currentRoomId) set({ currentRoomId });
   },
 
-  setPlayerPosition: (playerPosition) => {
-    set({ playerPosition });
-  },
-
-  triggerTeleport: (position, yaw) => {
-    set({
-      isTeleporting: true,
-      teleportTarget: { position, yaw },
-      isPaused: false,
-    });
-  },
-
-  completeTeleport: () => {
-    set({ isTeleporting: false, teleportTarget: null });
-  },
+  setPlayerPosition: (playerPosition) => set({ playerPosition }),
+  triggerTeleport: (position, yaw) => set({ isTeleporting: true, teleportTarget: { position, yaw }, isPaused: false }),
+  completeTeleport: () => set({ isTeleporting: false, teleportTarget: null }),
 
   enterSitting: (target) => {
     audioEngine.playSit();
     set({ posture: 'sitting', postureTarget: target, controls: { ...INITIAL_CONTROLS } });
   },
-
   exitSitting: () => {
     audioEngine.playSit();
     set({ posture: 'standing', postureTarget: null });
   },
-
   enterLying: (target) => {
     audioEngine.playSit();
     audioEngine.setBreathing(true);
     set({ posture: 'lying', postureTarget: target, controls: { ...INITIAL_CONTROLS } });
   },
-
   exitLying: () => {
     audioEngine.playSit();
     audioEngine.setBreathing(false);
@@ -242,20 +222,13 @@ export const useGameStore = create<GameStore>((set, get) => ({
   setActiveInteractable: (activeInteractable) => set({ activeInteractable }),
 
   toggleDoor: (doorId) => {
-    const current = !!get().doorStates[doorId];
-    const next = !current;
+    const current = !get().doorStates[doorId];
     const isSliding = doorId.includes('terrace') || doorId.includes('bath');
-    audioEngine.playDoor(next, isSliding ? 'sliding' : 'hinged');
-    set((state) => ({
-      doorStates: { ...state.doorStates, [doorId]: next },
-    }));
+    audioEngine.playDoor(current, isSliding ? 'sliding' : 'hinged');
+    set((s) => ({ doorStates: { ...s.doorStates, [doorId]: current } }));
   },
 
-  setDoorState: (doorId, open) => {
-    set((state) => ({
-      doorStates: { ...state.doorStates, [doorId]: open },
-    }));
-  },
+  setDoorState: (doorId, open) => set((s) => ({ doorStates: { ...s.doorStates, [doorId]: open } })),
 
   toggleWindow: (windowId) => {
     const next = !get().windowStates[windowId];
@@ -267,19 +240,12 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
   toggleCurtains: (curtainId) => {
     audioEngine.playSit();
-    set((state) => ({
-      curtainStates: { ...state.curtainStates, [curtainId]: !state.curtainStates[curtainId] },
-    }));
+    set((s) => ({ curtainStates: { ...s.curtainStates, [curtainId]: !s.curtainStates[curtainId] } }));
   },
 
   toggleRoomLight: (roomId) => {
     audioEngine.playSwitch();
-    set((state) => ({
-      lightingStates: {
-        ...state.lightingStates,
-        [roomId]: !state.lightingStates[roomId],
-      },
-    }));
+    set((s) => ({ lightingStates: { ...s.lightingStates, [roomId]: !s.lightingStates[roomId] } }));
   },
 
   setAllLights: (on) => {
@@ -292,56 +258,42 @@ export const useGameStore = create<GameStore>((set, get) => ({
   toggleFireplace: () => {
     const next = !get().fireplaceOn;
     audioEngine.playSwitch();
-    audioEngine.setFireplace(next);
+    audioEngine.setFireplace(next, get().muted);
     set({ fireplaceOn: next });
   },
 
-  toggleTv: () => {
-    audioEngine.playSwitch();
-    set((state) => ({ tvOn: !state.tvOn }));
-  },
-
-  toggleCooktop: () => {
-    audioEngine.playSwitch();
-    set((state) => ({ cooktopOn: !state.cooktopOn }));
-  },
-
+  toggleTv: () => { audioEngine.playSwitch(); set((s) => ({ tvOn: !s.tvOn })); },
+  toggleCooktop: () => { audioEngine.playSwitch(); set((s) => ({ cooktopOn: !s.cooktopOn })); },
   toggleFridge: () => {
     const next = !get().fridgeOpen;
     audioEngine.playDoor(next, 'hinged');
     set({ fridgeOpen: next });
   },
-
   toggleKitchenCabinet: () => {
     const next = !get().kitchenCabinetOpen;
     audioEngine.playDoor(next, 'hinged');
     set({ kitchenCabinetOpen: next });
   },
-
   toggleFaucet: () => {
     const next = !get().faucetRunning;
     audioEngine.playSwitch();
     audioEngine.setFaucet(next);
     set({ faucetRunning: next });
   },
-
   toggleShower: () => {
     const next = !get().showerRunning;
     audioEngine.playSwitch();
     audioEngine.setShower(next);
     set({ showerRunning: next });
   },
-
   toggleToiletLid: () => {
     audioEngine.playDoor(!get().toiletLidOpen, 'hinged');
-    set((state) => ({ toiletLidOpen: !state.toiletLidOpen }));
+    set((s) => ({ toiletLidOpen: !s.toiletLidOpen }));
   },
-
   toggleJacuzziJets: () => {
     audioEngine.playSwitch();
-    set((state) => ({ jacuzziJetsOn: !state.jacuzziJetsOn }));
+    set((s) => ({ jacuzziJetsOn: !s.jacuzziJetsOn }));
   },
-
   setIsNearJacuzzi: (isNearJacuzzi) => {
     if (get().isNearJacuzzi !== isNearJacuzzi) {
       set({ isNearJacuzzi });
@@ -349,31 +301,57 @@ export const useGameStore = create<GameStore>((set, get) => ({
     }
   },
 
+  setVolume: (volume: number) => {
+    const clamped = Math.max(0, Math.min(1, volume));
+    if (clamped === 0) {
+      set((s) => ({ volume: 0, muted: true, settings: { ...s.settings, volume: 0, isMuted: true } }));
+      audioEngine.setVolume(0);
+      audioEngine.setMuted(true);
+      saveAudioSettings(0, true);
+    } else {
+      const wasMuted = get().muted;
+      set((s) => ({ volume: clamped, muted: false, settings: { ...s.settings, volume: clamped, isMuted: false } }));
+      audioEngine.setVolume(clamped);
+      if (wasMuted) audioEngine.setMuted(false);
+      saveAudioSettings(clamped, false);
+    }
+  },
+
+  setMute: (muted: boolean) => {
+    set((s) => ({ muted, settings: { ...s.settings, isMuted: muted } }));
+    audioEngine.setMuted(muted);
+    saveAudioSettings(get().volume, muted);
+  },
+
+  toggleMute: () => {
+    const nextMuted = !get().muted;
+    set((s) => ({ muted: nextMuted, settings: { ...s.settings, isMuted: nextMuted } }));
+    audioEngine.setMuted(nextMuted);
+    saveAudioSettings(get().volume, nextMuted);
+
+    const toast = nextMuted ? 'Sound off' : 'Sound on';
+    set({ muteToast: toast });
+    if (toastTimeout) clearTimeout(toastTimeout);
+    toastTimeout = setTimeout(() => { set({ muteToast: null }); }, 1000);
+  },
+
   updateSettings: (partial) => {
     set((state) => {
       const updated = { ...state.settings, ...partial };
-      if (typeof partial.volume === 'number') audioEngine.setVolume(partial.volume);
-      if (typeof partial.isMuted === 'boolean') audioEngine.setMuted(partial.isMuted);
+      const nextVolume = typeof partial.volume === 'number' ? partial.volume : state.volume;
+      const nextMuted = typeof partial.isMuted === 'boolean' ? partial.isMuted : state.muted;
+      if (typeof partial.volume === 'number') get().setVolume(partial.volume);
+      if (typeof partial.isMuted === 'boolean') get().setMute(partial.isMuted);
       if (partial.quality) state.setQuality(partial.quality);
-      saveAudioSettings(updated.volume, updated.isMuted);
-      return { settings: updated };
+      return { settings: updated, volume: nextVolume, muted: nextMuted };
     });
   },
 
   resetSettings: () => {
-    set({ settings: { ...INITIAL_SETTINGS } });
-  },
-
-  toggleMute: () => {
-    const currentMuted = get().settings.isMuted;
-    const nextMuted = !currentMuted;
-    get().updateSettings({ isMuted: nextMuted });
-    const toast = nextMuted ? 'Sound off' : 'Sound on';
-    set({ muteToast: toast });
-    if (toastTimeout) clearTimeout(toastTimeout);
-    toastTimeout = setTimeout(() => {
-      set({ muteToast: null });
-    }, 1100);
+    set((s) => ({ settings: { ...INITIAL_SETTINGS }, volume: INITIAL_SETTINGS.volume, muted: INITIAL_SETTINGS.isMuted }));
+    audioEngine.setVolume(INITIAL_SETTINGS.volume);
+    audioEngine.setMuted(INITIAL_SETTINGS.isMuted);
+    saveAudioSettings(INITIAL_SETTINGS.volume, INITIAL_SETTINGS.isMuted);
   },
 
   setMuteToast: (muteToast) => set({ muteToast }),

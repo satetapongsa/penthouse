@@ -34,7 +34,12 @@ export const PauseMenu: React.FC<PauseMenuProps> = ({ onRequestPointerLock }) =>
   const triggerTeleport = useGameStore((s) => s.triggerTeleport);
   const settings = useGameStore((s) => s.settings);
   const updateSettings = useGameStore((s) => s.updateSettings);
+
+  const muted = useGameStore((s) => s.muted);
+  const volume = useGameStore((s) => s.volume);
+  const setVolume = useGameStore((s) => s.setVolume);
   const toggleMute = useGameStore((s) => s.toggleMute);
+
   const lightingStates = useGameStore((s) => s.lightingStates);
   const toggleRoomLight = useGameStore((s) => s.toggleRoomLight);
   const setAllLights = useGameStore((s) => s.setAllLights);
@@ -249,10 +254,10 @@ export const PauseMenu: React.FC<PauseMenuProps> = ({ onRequestPointerLock }) =>
               <div>
                 <div className="flex justify-between items-center text-[11px] font-mono text-neutral-500 uppercase mb-1">
                   <span className="flex items-center gap-1">
-                    {settings.isMuted ? <VolumeX className="w-3 h-3 text-red-500" /> : <Volume2 className="w-3 h-3 text-[#C5A059]" />}
+                    {muted ? <VolumeX className="w-3 h-3 text-red-500" /> : <Volume2 className="w-3 h-3 text-[#C5A059]" />}
                     Audio Volume
                   </span>
-                  <span>{settings.isMuted ? 'Muted' : `${Math.round(settings.volume * 100)}%`}</span>
+                  <span>{muted ? 'Muted' : `${Math.round(volume * 100)}%`}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <input
@@ -260,15 +265,16 @@ export const PauseMenu: React.FC<PauseMenuProps> = ({ onRequestPointerLock }) =>
                     min="0"
                     max="1"
                     step="0.05"
-                    value={settings.volume}
-                    onChange={(e) => updateSettings({ volume: parseFloat(e.target.value) })}
+                    value={muted ? 0 : volume}
+                    onChange={(e) => setVolume(parseFloat(e.target.value))}
                     className="w-full accent-[#C5A059] cursor-pointer"
                   />
                   <button
                     onClick={toggleMute}
+                    aria-label={muted ? 'Unmute Audio' : 'Mute Audio'}
                     className="px-2.5 py-1 rounded-md text-[10px] font-mono border border-[#DDD3C3] bg-[#FFFDF9] hover:bg-[#F3EFE6] flex items-center gap-1 cursor-pointer transition-colors"
                   >
-                    {settings.isMuted ? (
+                    {muted ? (
                       <>
                         <Volume2 className="w-3 h-3 text-[#8C7443]" />
                         <span>Unmute</span>

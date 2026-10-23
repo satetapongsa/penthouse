@@ -4,7 +4,15 @@ import React from 'react';
 import { useProgress } from '@react-three/drei';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useGameStore } from '@/store/useGameStore';
-import { Compass, Move, Eye, ChevronsUp, ShieldAlert, Sparkles, Smartphone } from 'lucide-react';
+import {
+  Compass,
+  Move,
+  Eye,
+  Sparkles,
+  Smartphone,
+  Volume2,
+  VolumeX,
+} from 'lucide-react';
 
 interface IntroOverlayProps {
   onEnter: () => void;
@@ -13,6 +21,8 @@ interface IntroOverlayProps {
 export const IntroOverlay: React.FC<IntroOverlayProps> = ({ onEnter }) => {
   const isStarted = useGameStore((s) => s.isStarted);
   const isMobile = useGameStore((s) => s.isMobile);
+  const muted = useGameStore((s) => s.muted);
+  const toggleMute = useGameStore((s) => s.toggleMute);
   const { progress, active, loaded, total } = useProgress();
 
   const isReady = progress >= 100 || !active;
@@ -33,6 +43,32 @@ export const IntroOverlay: React.FC<IntroOverlayProps> = ({ onEnter }) => {
           <div className="absolute -top-[20%] -left-[10%] w-[60vw] h-[60vw] rounded-full bg-gradient-to-br from-[#F5E6CA]/60 to-transparent blur-3xl" />
           <div className="absolute -bottom-[20%] -right-[10%] w-[60vw] h-[60vw] rounded-full bg-gradient-to-tl from-[#D4AF37]/20 to-transparent blur-3xl" />
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-[radial-gradient(#C5A059_1px,transparent_1px)] [background-size:32px_32px] opacity-15" />
+        </div>
+
+        {/* Top-Right Sound Pre-Entry Toggle */}
+        <div className="absolute top-6 right-6 z-50">
+          <button
+            onClick={toggleMute}
+            className={`flex items-center gap-2 px-3.5 py-2 rounded-full backdrop-blur-md border transition-all cursor-pointer shadow-md select-none ${
+              muted
+                ? 'bg-[#2E1A1A]/90 border-red-400/60 text-red-400 hover:bg-[#3D2222]'
+                : 'bg-[#FFFDF9]/90 border-[#C5A059]/40 text-[#4A453B] hover:bg-[#F5EFE6]'
+            }`}
+            aria-label={muted ? 'Sound is off. Click to turn sound on' : 'Sound is on. Click to mute'}
+            title={muted ? 'Sound off (Click to turn sound on)' : 'Sound on (Click to mute)'}
+          >
+            {muted ? (
+              <>
+                <VolumeX className="w-4 h-4 text-red-500" />
+                <span className="text-xs font-mono tracking-wider uppercase text-red-400">Sound Off</span>
+              </>
+            ) : (
+              <>
+                <Volume2 className="w-4 h-4 text-[#8C7443]" />
+                <span className="text-xs font-mono tracking-wider uppercase text-[#8C7443]">Sound On</span>
+              </>
+            )}
+          </button>
         </div>
 
         <div className="relative max-w-2xl w-full mx-auto flex flex-col items-center text-center">
@@ -158,13 +194,7 @@ export const IntroOverlay: React.FC<IntroOverlayProps> = ({ onEnter }) => {
                   <span className="font-mono px-2 py-0.5 rounded bg-[#EFECE1] text-[#3D3A33] border border-[#DDD3C3]">
                     Right Screen
                   </span>
-                  <span>Swipe to Look</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="font-mono px-2 py-0.5 rounded bg-[#EFECE1] text-[#3D3A33] border border-[#DDD3C3]">
-                    Jump Btn
-                  </span>
-                  <span>Hop / Step-up</span>
+                  <span>Drag to Look</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="font-mono px-2 py-0.5 rounded bg-[#EFECE1] text-[#3D3A33] border border-[#DDD3C3]">
@@ -174,7 +204,7 @@ export const IntroOverlay: React.FC<IntroOverlayProps> = ({ onEnter }) => {
                 </div>
               </div>
             ) : (
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 text-xs text-[#5E5950]">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs text-[#5E5950]">
                 <div className="flex items-center gap-1.5">
                   <kbd className="px-1.5 py-0.5 rounded bg-[#EFECE1] font-mono text-[11px] text-[#3D3A33] border border-[#DDD3C3] shadow-xs">
                     W A S D
@@ -208,6 +238,12 @@ export const IntroOverlay: React.FC<IntroOverlayProps> = ({ onEnter }) => {
                     E
                   </kbd>
                   <span>Interact</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <kbd className="px-1.5 py-0.5 rounded bg-[#EFECE1] font-mono text-[11px] text-[#3D3A33] border border-[#DDD3C3] shadow-xs">
+                    M
+                  </kbd>
+                  <span>Mute Sound</span>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <kbd className="px-1.5 py-0.5 rounded bg-[#EFECE1] font-mono text-[11px] text-[#3D3A33] border border-[#DDD3C3] shadow-xs">

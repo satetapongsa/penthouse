@@ -9,6 +9,7 @@ import { IntroOverlay } from '@/components/intro/IntroOverlay';
 import { HUD } from '@/components/ui/HUD';
 import { MobileControls } from '@/components/mobile/MobileControls';
 import { requestCanvasPointerLock } from '@/lib/pointerLock';
+import { audioEngine } from '@/lib/audio';
 
 // Dynamically load the WebGL Three.js Canvas with ssr: false
 const PenthouseCanvas = dynamic(
@@ -35,6 +36,34 @@ export const PenthouseExperience: React.FC = () => {
 
   const isMobile = useGameStore((s) => s.isMobile);
   const startGame = useGameStore((s) => s.startGame);
+  const hydrateAudioSettings = useGameStore((s) => s.hydrateAudioSettings);
+
+  // Hydrate audio preferences on client mount (SSR-safe, zero hydration mismatch)
+  useEffect(() => {
+    hydrateAudioSettings();
+  }, [hydrateAudioSettings]);
+
+  // Resume suspended AudioContext on visibility change and subsequent user gestures
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        audioEngine.resumeContext();
+      }
+    };
+    const handleGesture = () => {
+      audioEngine.resumeContext();
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('pointerdown', handleGesture, { passive: true });
+    window.addEventListener('keydown', handleGesture, { passive: true });
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('pointerdown', handleGesture);
+      window.removeEventListener('keydown', handleGesture);
+    };
+  }, []);
 
   // Unified pointer lock requester
   const requestPointerLock = useCallback(() => {
@@ -52,9 +81,10 @@ export const PenthouseExperience: React.FC = () => {
     }
   }, [startGame, isMobile]);
 
-  // Single global pointer lock state sync and pause-on-lock-loss listener
+  // Single global pointer lock state sync, audio context resume, and pause-on-lock-loss listener
   useEffect(() => {
     const handlePointerLockChange = () => {
+      audioEngine.resumeContext();
       const canvas = document.querySelector('canvas');
       const isLocked = !!canvas && document.pointerLockElement === canvas;
       useGameStore.getState().setPointerLocked(isLocked);

@@ -1,6 +1,7 @@
 /**
  * THE SKYLINE PENTHOUSE - Web Audio API Synthesis Engine
  * 100% procedural sound synthesis. No external audio files or samples.
+ * Single master GainNode routing for all music, footsteps, doors, windows, wind, water, and fire.
  */
 
 import { createNoiseBuffer } from './audioSynthesis';
@@ -17,7 +18,7 @@ class PenthouseAudioEngine {
 
   private loops = new AudioLoopsManager();
 
-  private getContext(): AudioContext | null {
+  public getContext(): AudioContext | null {
     if (typeof window === 'undefined') return null;
     if (!this.ctx) {
       const AudioCtx =
@@ -25,6 +26,8 @@ class PenthouseAudioEngine {
         (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
       if (AudioCtx) {
         this.ctx = new AudioCtx();
+
+        // 1. Single Master GainNode that ALL audio routes through
         this.masterGain = this.ctx.createGain();
         this.masterGain.gain.setValueAtTime(
           this.isMuted ? 0 : this.currentVolume,
@@ -32,6 +35,7 @@ class PenthouseAudioEngine {
         );
         this.masterGain.connect(this.ctx.destination);
 
+        // 2. Sub-Gain Nodes connecting to master
         this.musicGain = this.ctx.createGain();
         this.musicGain.gain.setValueAtTime(0.22, this.ctx.currentTime);
         this.musicGain.connect(this.masterGain);
@@ -41,6 +45,7 @@ class PenthouseAudioEngine {
         this.sfxGain.connect(this.masterGain);
 
         this.loops.setNodes(this.ctx, this.sfxGain, this.musicGain);
+        this.loops.setMuted(this.isMuted);
         this.isInitialized = true;
       }
     }
@@ -50,6 +55,12 @@ class PenthouseAudioEngine {
     }
 
     return this.ctx;
+  }
+
+  public resumeContext(): void {
+    if (this.ctx && this.ctx.state === 'suspended') {
+      this.ctx.resume().catch(() => {});
+    }
   }
 
   public init(initialVolume?: number, initialMuted?: boolean): void {
@@ -63,6 +74,7 @@ class PenthouseAudioEngine {
     if (ctx && this.masterGain) {
       const target = this.isMuted ? 0 : this.currentVolume;
       this.masterGain.gain.setValueAtTime(target, ctx.currentTime);
+      this.loops.setMuted(this.isMuted);
     }
   }
 
@@ -78,8 +90,10 @@ class PenthouseAudioEngine {
     this.isMuted = muted;
     if (this.masterGain && this.ctx) {
       const target = muted ? 0 : this.currentVolume;
+      // Smooth ramp over ~50ms (0.05s time constant) to prevent clicks
       this.masterGain.gain.setTargetAtTime(target, this.ctx.currentTime, 0.05);
     }
+    this.loops.setMuted(muted);
   }
 
   public getIsMuted(): boolean {
@@ -246,8 +260,8 @@ class PenthouseAudioEngine {
   public setShower(active: boolean): void {
     this.loops.setShower(active);
   }
-  public setFireplace(active: boolean): void {
-    this.loops.setFireplace(active, this.isMuted);
+  public setFireplace(active: boolean, isMuted?: boolean): void {
+    this.loops.setFireplace(active, typeof isMuted === 'boolean' ? isMuted : this.isMuted);
   }
   public setPoolNear(active: boolean): void {
     this.loops.setPoolNear(active);
@@ -255,8 +269,8 @@ class PenthouseAudioEngine {
   public setBreathing(active: boolean): void {
     this.loops.setBreathing(active);
   }
-  public startAmbientMusic(): void {
-    this.loops.startAmbientMusic(this.isMuted);
+  public startAmbientMusic(isMuted?: boolean): void {
+    this.loops.startAmbientMusic(typeof isMuted === 'boolean' ? isMuted : this.isMuted);
   }
   public stopAmbientMusic(): void {
     this.loops.stopAmbientMusic();
