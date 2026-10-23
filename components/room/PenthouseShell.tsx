@@ -3,8 +3,12 @@
 import React, { useMemo } from 'react';
 import * as THREE from 'three';
 import { RigidBody, CuboidCollider } from '@react-three/rapier';
+import { MeshReflectorMaterial } from '@react-three/drei';
 import { ARCHITECTURE_CONFIG } from '@/lib/config';
 import { Door } from '@/components/doors/Door';
+import { FoyerFurniture } from '@/components/furniture/foyer/FoyerFurniture';
+import { LivingFurniture } from '@/components/furniture/living/LivingFurniture';
+import { KitchenDiningFurniture } from '@/components/furniture/kitchen/KitchenDiningFurniture';
 
 interface WallSegmentProps {
   position: [number, number, number];
@@ -173,11 +177,18 @@ export const PenthouseShell: React.FC = () => {
       </RigidBody>
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[-0.25, 0, 0.25]} receiveShadow>
         <planeGeometry args={[28.5, 12.5]} />
-        <meshStandardMaterial
+        <MeshReflectorMaterial
+          blur={[300, 100]}
+          resolution={512}
+          mixBlur={0.8}
+          mixStrength={1.2}
+          roughness={0.25}
+          depthScale={1.2}
+          minDepthThreshold={0.4}
+          maxDepthThreshold={1.4}
           color={colors.floorTravertine}
-          map={travertineTexture || undefined}
-          roughness={0.4}
-          metalness={0.04}
+          metalness={0.05}
+          mirror={0.35}
         />
       </mesh>
 
@@ -371,6 +382,11 @@ export const PenthouseShell: React.FC = () => {
       {ARCHITECTURE_CONFIG.doors.map((doorConfig) => (
         <Door key={doorConfig.id} config={doorConfig} />
       ))}
+
+      {/* -------------------- 5B. PUBLIC AREA LUXURY FURNITURE -------------------- */}
+      <FoyerFurniture />
+      <LivingFurniture />
+      <KitchenDiningFurniture />
 
       {/* -------------------- 6. PRIVATE SKY TERRACE & JACUZZI BASIN -------------------- */}
       {/* Glass Railing (Height 1.2m) around Terrace perimeter */}

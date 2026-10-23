@@ -22,11 +22,15 @@ Built with **Next.js App Router**, **TypeScript**, **Tailwind CSS**, and **Three
   9. **Grand Entrance Foyer** (6m x 4.5m, 27 m²): Private high-speed elevator arrival vestibule.
   10. **Guest Bedroom Suite** (7m x 4.5m, 31.5 m²): Private suite on the southeastern wing.
 - **Ceiling Height**: 3.4m across all interior zones with continuous baseboards and crown molding.
+- **Polished Floor Reflections**: Real-time planar floor reflections via `@react-three/drei`'s `MeshReflectorMaterial`, capturing mirrors of furniture, lighting, and panoramic windows.
+- **Public Area Furnishings (Phase 3)**:
+  - **Foyer**: Honed Calacatta marble console table with fluted oak base, 1.2m round brass bevel wall mirror, fluted shoe cabinet credenza with potted plant, and modernist bronze ribbon sculpture on a fluted travertine pedestal.
+  - **Living Room**: Large ivory bouclé L-shaped sectional sofa with scatter pillows and cashmere blanket, nested travertine and brass coffee table with art monographs and floral vase, two curved bouclé accent armchairs, 85" OLED TV feature wall with floating media console and glowing linear fireplace, white lacquer grand piano, plush textured area rug, 5-tier brass & oak bookshelves with detailed books and ceramic vessels, indoor potted tree, and arched brass floor lamp.
+  - **Kitchen & Dining**: 3.6m Calacatta Gold waterfall marble island with undermount sink, brass gooseneck faucet, flush induction cooktop, 4 bouclé bar stools, trio of brass pendant globes, full-height pale oak cabinetry with built-in oven and fridge, grand 8-seater travertine dining table with full luxury place settings (gold chargers, porcelain dinnerware, linen napkins, crystal stemware, cutlery), centerpiece fruit bowl, and backlit glass-front wine display wall.
 - **Interactive Door System**:
   - Reusable `<Door>` component supporting hinged swing doors and sliding glass doors.
   - Rapier kinematic colliders that update seamlessly when doors open or close.
   - Camera center raycast detection (2.4m range): crosshair expands with prompt `"[E] Open door"`.
-  - Generic `<Interactable>` registry ready for future lighting, appliances, and fixtures.
 - **Navigation & Teleportation**:
   - Tactical SVG **Mini-Map** in the bottom-left with player position dot and real-time vision cone.
   - **Room Banner** that fades in smoothly upon entering new rooms.
@@ -126,6 +130,13 @@ vercel
 │   │   └── PenthouseCanvas.tsx # WebGL R3F Canvas with Rapier physics engine
 │   ├── doors/
 │   │   └── Door.tsx           # Reusable hinged and sliding door with kinematic colliders
+│   ├── furniture/
+│   │   ├── foyer/
+│   │   │   └── FoyerFurniture.tsx # Console table, brass mirror, shoe cabinet, art piece
+│   │   ├── living/
+│   │   │   └── LivingFurniture.tsx# Sectional sofa, coffee table, armchairs, TV wall, piano
+│   │   └── kitchen/
+│   │       └── KitchenDiningFurniture.tsx # Marble island, bar stools, dining set, wine wall
 │   ├── interaction/
 │   │   └── InteractionManager.tsx # Raycaster interaction detection system
 │   ├── intro/
@@ -139,7 +150,7 @@ vercel
 │   ├── player/
 │   │   └── Player.tsx         # Rapier capsule physics, camera sync, head bob & crouch
 │   ├── room/
-│   │   └── PenthouseShell.tsx # Full 10-room architectural layout, colliders & sky terrace
+│   │   └── PenthouseShell.tsx # Full 10-room architectural layout, reflective floor, terrace
 │   ├── ui/
 │   │   └── HUD.tsx            # Dynamic crosshair dot, pause menu & WebGL fallback modal
 │   └── PenthouseExperience.tsx# Dynamic client orchestrator (SSR: false)
@@ -147,7 +158,8 @@ vercel
 │   ├── useDeviceDetect.ts     # Touch device auto-detection hook
 │   └── useKeyboardControls.ts # Desktop keyboard event listener & pause binder
 ├── lib/
-│   └── config.ts              # Single source of truth for architectural dimensions
+│   ├── config.ts              # Single source of truth for architectural dimensions
+│   └── materials.ts           # Procedural canvas textures (Calacatta, oak, bouclé, books)
 ├── store/
 │   └── useGameStore.ts        # Zustand store for game state, device, and controls
 ├── next.config.mjs            # Next.js transpile packages configuration

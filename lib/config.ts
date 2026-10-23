@@ -67,7 +67,7 @@ export const ARCHITECTURE_CONFIG = {
       depth: 8.0,
       height: 3.4,
       center: [2.0, 1.7, -2.0] as [number, number, number],
-      spawnPosition: [2.0, 1.8, -1.0] as [number, number, number], // Initial spawn in living room facing windows
+      spawnPosition: [2.0, 1.8, -3.0] as [number, number, number], // Initial spawn in living room facing windows
       spawnYaw: 0, // Facing North (toward skyline windows and terrace)
     },
     kitchen_dining: {
@@ -299,7 +299,7 @@ export const PLAYER_CONFIG = {
   crouchEyeHeight: 1.0,
   capsuleRadius: 0.38,
   capsuleHeight: 1.0,
-  spawnPosition: [2.0, 1.8, -1.0] as [number, number, number], // Spawn in living room facing windows
+  spawnPosition: [2.0, 1.8, -3.0] as [number, number, number], // Spawn in living room facing windows
 
   // Movement Physics
   walkSpeed: 4.2,

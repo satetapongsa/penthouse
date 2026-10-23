@@ -110,7 +110,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
   lookDelta: { x: 0, y: 0 },
 
   currentRoomId: 'living',
-  playerPosition: { x: 2.0, z: -1.0, yaw: 0 },
+  playerPosition: { x: 2.0, z: -3.0, yaw: 0 },
   isTeleporting: false,
   teleportTarget: null,
 
