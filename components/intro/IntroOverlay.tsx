@@ -205,6 +205,12 @@ export const IntroOverlay: React.FC<IntroOverlayProps> = ({ onEnter }) => {
                 </div>
                 <div className="flex items-center gap-1.5">
                   <kbd className="px-1.5 py-0.5 rounded bg-[#EFECE1] font-mono text-[11px] text-[#3D3A33] border border-[#DDD3C3] shadow-xs">
+                    E
+                  </kbd>
+                  <span>Interact</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <kbd className="px-1.5 py-0.5 rounded bg-[#EFECE1] font-mono text-[11px] text-[#3D3A33] border border-[#DDD3C3] shadow-xs">
                     Esc
                   </kbd>
                   <span>Pause</span>

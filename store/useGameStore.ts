@@ -21,6 +21,12 @@ export interface SettingsState {
   showFps: boolean;
 }
 
+export interface InteractableAction {
+  id: string;
+  label: string;
+  action: () => void;
+}
+
 interface GameStore {
   // Game Status
   gameState: GameState;
@@ -29,10 +35,20 @@ interface GameStore {
   isMobile: boolean;
   webGlSupported: boolean;
 
-  // Active Control Inputs (unified desktop keyboard + mobile virtual inputs)
+  // Active Control Inputs
   controls: ControlState;
-  joystickVector: { x: number; y: number }; // normalized -1 to 1 (x: strafe, y: forward/back)
-  lookDelta: { x: number; y: number };     // mobile touch look delta accumulator
+  joystickVector: { x: number; y: number };
+  lookDelta: { x: number; y: number };
+
+  // Navigation & Room Awareness
+  currentRoomId: string;
+  playerPosition: { x: number; z: number; yaw: number };
+  isTeleporting: boolean;
+  teleportTarget: { position: [number, number, number]; yaw?: number } | null;
+
+  // Interaction System
+  activeInteractable: InteractableAction | null;
+  doorStates: Record<string, boolean>; // doorId -> isOpen
 
   // Configuration & Settings
   settings: SettingsState;
@@ -50,6 +66,15 @@ interface GameStore {
   setJoystickVector: (vector: { x: number; y: number }) => void;
   addLookDelta: (delta: { x: number; y: number }) => void;
   consumeLookDelta: () => { x: number; y: number };
+
+  setCurrentRoomId: (roomId: string) => void;
+  setPlayerPosition: (pos: { x: number; z: number; yaw: number }) => void;
+  triggerTeleport: (position: [number, number, number], yaw?: number) => void;
+  completeTeleport: () => void;
+
+  setActiveInteractable: (interactable: InteractableAction | null) => void;
+  toggleDoor: (doorId: string) => void;
+  setDoorState: (doorId: string, open: boolean) => void;
 
   updateSettings: (partial: Partial<SettingsState>) => void;
 }
@@ -84,6 +109,22 @@ export const useGameStore = create<GameStore>((set, get) => ({
   joystickVector: { x: 0, y: 0 },
   lookDelta: { x: 0, y: 0 },
 
+  currentRoomId: 'living',
+  playerPosition: { x: 2.0, z: -1.0, yaw: 0 },
+  isTeleporting: false,
+  teleportTarget: null,
+
+  activeInteractable: null,
+  doorStates: {
+    'door-entrance': false,
+    'door-master-bed': false,
+    'door-master-bath': false,
+    'door-wardrobe': false,
+    'door-guest-bed': false,
+    'door-powder': false,
+    'door-terrace': false,
+  },
+
   settings: { ...initialSettings },
 
   setGameState: (gameState) => {
@@ -107,7 +148,6 @@ export const useGameStore = create<GameStore>((set, get) => ({
       set({
         gameState: 'paused',
         isPaused: true,
-        // Reset movement inputs on pause so player doesn't keep running
         controls: { ...initialControls },
         joystickVector: { x: 0, y: 0 },
       });
@@ -131,6 +171,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       controls: { ...initialControls },
       joystickVector: { x: 0, y: 0 },
       lookDelta: { x: 0, y: 0 },
+      activeInteractable: null,
     });
   },
 
@@ -165,6 +206,54 @@ export const useGameStore = create<GameStore>((set, get) => ({
       set({ lookDelta: { x: 0, y: 0 } });
     }
     return current;
+  },
+
+  setCurrentRoomId: (currentRoomId) => {
+    if (get().currentRoomId !== currentRoomId) {
+      set({ currentRoomId });
+    }
+  },
+
+  setPlayerPosition: (playerPosition) => {
+    set({ playerPosition });
+  },
+
+  triggerTeleport: (position, yaw) => {
+    set({
+      isTeleporting: true,
+      teleportTarget: { position, yaw },
+      controls: { ...initialControls },
+      joystickVector: { x: 0, y: 0 },
+    });
+  },
+
+  completeTeleport: () => {
+    set({
+      isTeleporting: false,
+      teleportTarget: null,
+    });
+  },
+
+  setActiveInteractable: (activeInteractable) => {
+    set({ activeInteractable });
+  },
+
+  toggleDoor: (doorId) => {
+    set((state) => ({
+      doorStates: {
+        ...state.doorStates,
+        [doorId]: !state.doorStates[doorId],
+      },
+    }));
+  },
+
+  setDoorState: (doorId, open) => {
+    set((state) => ({
+      doorStates: {
+        ...state.doorStates,
+        [doorId]: open,
+      },
+    }));
   },
 
   updateSettings: (partial) => {

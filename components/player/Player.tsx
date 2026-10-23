@@ -5,7 +5,7 @@ import * as THREE from 'three';
 import { useFrame, useThree } from '@react-three/fiber';
 import { RigidBody, CapsuleCollider, RapierRigidBody, useRapier } from '@react-three/rapier';
 import { useGameStore } from '@/store/useGameStore';
-import { PLAYER_CONFIG } from '@/lib/config';
+import { PLAYER_CONFIG, ARCHITECTURE_CONFIG } from '@/lib/config';
 
 export const Player: React.FC = () => {
   const rigidBodyRef = useRef<RapierRigidBody>(null);
@@ -22,7 +22,13 @@ export const Player: React.FC = () => {
   const pauseGame = useGameStore((s) => s.pauseGame);
   const settings = useGameStore((s) => s.settings);
 
-  // Orientation State
+  // Teleport & Room Tracking
+  const teleportTarget = useGameStore((s) => s.teleportTarget);
+  const completeTeleport = useGameStore((s) => s.completeTeleport);
+  const setCurrentRoomId = useGameStore((s) => s.setCurrentRoomId);
+  const setPlayerPosition = useGameStore((s) => s.setPlayerPosition);
+
+  // Orientation State (Initial yaw = 0 facing North windows)
   const yaw = useRef<number>(0);
   const pitch = useRef<number>(0);
 
@@ -31,12 +37,15 @@ export const Player: React.FC = () => {
   const headBobTimer = useRef<number>(0);
   const isGrounded = useRef<boolean>(true);
 
+  // Last room check and minimap sync timestamps
+  const lastRoomCheck = useRef<number>(0);
+  const lastPosSync = useRef<number>(0);
+
   // Setup Pointer Lock & Mouse Look for Desktop
   useEffect(() => {
     if (isMobile) return;
 
     const handleMouseMove = (e: MouseEvent) => {
-      // Only process mouse look if pointer is locked and game is active
       if (document.pointerLockElement !== gl.domElement) return;
       if (!isStarted || isPaused) return;
 
@@ -44,7 +53,6 @@ export const Player: React.FC = () => {
       yaw.current -= e.movementX * sensitivity;
       pitch.current -= e.movementY * sensitivity;
 
-      // Clamp vertical pitch to avoid flipping over
       pitch.current = Math.max(
         -PLAYER_CONFIG.pitchLimit,
         Math.min(PLAYER_CONFIG.pitchLimit, pitch.current)
@@ -53,7 +61,6 @@ export const Player: React.FC = () => {
 
     const handlePointerLockChange = () => {
       if (document.pointerLockElement !== gl.domElement) {
-        // Automatically pause when pointer lock is released (e.g. user pressed Esc)
         if (isStarted && !isPaused) {
           pauseGame();
         }
@@ -72,10 +79,30 @@ export const Player: React.FC = () => {
   useFrame((state, delta) => {
     if (!rigidBodyRef.current) return;
     const body = rigidBodyRef.current;
+
+    // 1. Handle Teleportation Target
+    if (teleportTarget) {
+      body.setTranslation(
+        new THREE.Vector3(
+          teleportTarget.position[0],
+          teleportTarget.position[1],
+          teleportTarget.position[2]
+        ),
+        true
+      );
+      body.setLinvel(new THREE.Vector3(0, 0, 0), true);
+      if (typeof teleportTarget.yaw === 'number') {
+        yaw.current = teleportTarget.yaw;
+      }
+      pitch.current = 0;
+      completeTeleport();
+      return;
+    }
+
     const pos = body.translation();
     const linvel = body.linvel();
 
-    // 1. Check Fall Safety Reset
+    // 2. Check Fall Safety Reset
     if (pos.y < PLAYER_CONFIG.fallResetY) {
       body.setTranslation(
         new THREE.Vector3(
@@ -89,7 +116,30 @@ export const Player: React.FC = () => {
       return;
     }
 
-    // 2. Consume Mobile Touch Look Delta
+    // 3. Room Detection & Minimap Position Check
+    const now = performance.now();
+    if (now - lastPosSync.current > 60) {
+      lastPosSync.current = now;
+      setPlayerPosition({ x: pos.x, z: pos.z, yaw: yaw.current });
+    }
+
+    if (now - lastRoomCheck.current > 150) {
+      lastRoomCheck.current = now;
+      const rooms = Object.values(ARCHITECTURE_CONFIG.rooms);
+      for (const room of rooms) {
+        if (
+          pos.x >= room.bounds.minX &&
+          pos.x <= room.bounds.maxX &&
+          pos.z >= room.bounds.minZ &&
+          pos.z <= room.bounds.maxZ
+        ) {
+          setCurrentRoomId(room.id);
+          break;
+        }
+      }
+    }
+
+    // 4. Consume Mobile Touch Look Delta
     if (isStarted && !isPaused) {
       const mobileDelta = consumeLookDelta();
       if (mobileDelta.x !== 0 || mobileDelta.y !== 0) {
@@ -102,21 +152,19 @@ export const Player: React.FC = () => {
       }
     }
 
-    // 3. Ground Detection via Rapier Raycast
+    // 5. Ground Detection via Rapier Raycast
     const rayOrigin = { x: pos.x, y: pos.y + 0.1, z: pos.z };
     const rayDir = { x: 0, y: -1, z: 0 };
-    const maxToi = 0.45; // Distance to ground beneath capsule bottom
+    const maxToi = 0.45;
     const ray = new rapier.Ray(rayOrigin, rayDir);
-    // Ignore self collider
     const hit = world.castRay(ray, maxToi, true);
     isGrounded.current = hit !== null || Math.abs(linvel.y) < 0.05;
 
-    // 4. Calculate Desired Movement Vector
+    // 6. Calculate Movement Direction & Speed
     let targetSpeed = 0;
     const isCrouching = controls.crouch;
     const isSprinting = controls.sprint && !isCrouching && (controls.forward || joystickVector.y > 0.3);
 
-    // Direction from keyboard
     let inputForward = 0;
     let inputStrafe = 0;
 
@@ -126,7 +174,6 @@ export const Player: React.FC = () => {
       if (controls.right) inputStrafe += 1;
       if (controls.left) inputStrafe -= 1;
 
-      // Combine with mobile virtual joystick
       inputForward += joystickVector.y;
       inputStrafe += joystickVector.x;
     }
@@ -144,11 +191,9 @@ export const Player: React.FC = () => {
       }
     }
 
-    // Normalize movement input vector
     const normX = hasMovement ? inputStrafe / Math.max(1, inputLength) : 0;
     const normZ = hasMovement ? inputForward / Math.max(1, inputLength) : 0;
 
-    // Transform direction into world space based on yaw
     const forwardX = -Math.sin(yaw.current);
     const forwardZ = -Math.cos(yaw.current);
     const rightX = Math.cos(yaw.current);
@@ -160,13 +205,12 @@ export const Player: React.FC = () => {
     const targetVx = worldDirX * targetSpeed;
     const targetVz = worldDirZ * targetSpeed;
 
-    // Smooth horizontal acceleration and deceleration
     const accelRate = hasMovement ? PLAYER_CONFIG.acceleration : PLAYER_CONFIG.deceleration;
     const smoothFactor = Math.min(1.0, delta * accelRate);
     const newVx = THREE.MathUtils.lerp(linvel.x, targetVx, smoothFactor);
     const newVz = THREE.MathUtils.lerp(linvel.z, targetVz, smoothFactor);
 
-    // Handle Jumping
+    // Jump handling
     let newVy = linvel.y;
     if (controls.jump && isGrounded.current && isStarted && !isPaused) {
       newVy = PLAYER_CONFIG.jumpImpulse;
@@ -175,7 +219,7 @@ export const Player: React.FC = () => {
 
     body.setLinvel(new THREE.Vector3(newVx, newVy, newVz), true);
 
-    // 5. Dynamic Eye Height (Standing vs Crouch)
+    // 7. Dynamic Eye Height (Standing vs Crouch)
     const targetEyeHeight = isCrouching
       ? PLAYER_CONFIG.crouchEyeHeight
       : PLAYER_CONFIG.standingEyeHeight;
@@ -185,7 +229,7 @@ export const Player: React.FC = () => {
       delta * 10
     );
 
-    // 6. Subtle Head Bobbing when Walking / Sprinting
+    // 8. Subtle Head Bobbing
     const horizontalSpeed = Math.hypot(linvel.x, linvel.z);
     let bobOffset = 0;
     if (isGrounded.current && horizontalSpeed > 0.5) {
@@ -199,18 +243,15 @@ export const Player: React.FC = () => {
       headBobTimer.current += delta * bobFreq;
       bobOffset = Math.sin(headBobTimer.current) * bobAmp;
     } else {
-      // Smoothly return bob to neutral
       bobOffset = THREE.MathUtils.lerp(0, 0, delta * 8);
     }
 
-    // 7. Update Camera Position & Rotation
-    // Note: capsule center is at pos.y + (height/2 + radius).
-    // The player's feet rest on pos.y.
+    // 9. Sync Camera
     const cameraY = pos.y + currentEyeHeight.current + bobOffset;
     camera.position.set(pos.x, cameraY, pos.z);
     camera.rotation.set(pitch.current, yaw.current, 0, 'YXZ');
 
-    // 8. Dynamic FOV Kick on Sprint
+    // 10. Sprint FOV Kick
     if (camera instanceof THREE.PerspectiveCamera) {
       const targetFov = isSprinting ? PLAYER_CONFIG.sprintFov : PLAYER_CONFIG.baseFov;
       if (Math.abs(camera.fov - targetFov) > 0.05) {

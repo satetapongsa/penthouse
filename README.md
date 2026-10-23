@@ -10,9 +10,28 @@ Built with **Next.js App Router**, **TypeScript**, **Tailwind CSS**, and **Three
 
 - **Theme**: Bright, airy white and cream — ivory microcement, warm white plaster, champagne, beige, light travertine stone tiles, pale Scandinavian oak, brushed brass accents, and soft sage plants.
 - **Procedural Purity**: 100% procedural code execution — zero external GLB, HDR, image, or audio files required. Instant load, zero external asset bandwidth, no external API keys or backend dependencies.
-- **Physics & Navigation**: First-person capsule collider powered by Rapier 3D WebAssembly physics, subtle organic head-bobbing, sprint FOV acceleration kick, smooth crouch height adjustment, step-up physics, and fall-safe boundaries.
-- **Responsive Navigation**: Full desktop PointerLock mouse look + keyboard (WASD / Shift / Space / C / Esc) and automatic mobile touch detection with a custom floating virtual joystick, touch-drag look, jump, crouch, and action buttons.
-- **Single Source of Truth**: All room dimensions, wall thicknesses, and door coordinates are unified in `/lib/config.ts`.
+- **Physical Penthouse Shell (~280 m² + 105 m² Sky Terrace)**:
+  1. **Grand Living Gallery (Main Hall)** (11m x 8m, 88 m²): Panoramic city-facing glass wall and sliding terrace access.
+  2. **Kitchen & Dining Pavilion** (6.5m x 8m, 52 m²): Open entertaining layout adjacent to living room.
+  3. **Private Sky Terrace & Jacuzzi** (17.5m x 6m, 105 m²): Open-air terrace with 1.2m glass railing and recessed jacuzzi/pool basin.
+  4. **Gallery Hallway** (3m x 8m, 24 m²): Central connecting corridor with architectural archways.
+  5. **Master Bedroom Suite** (8m x 6m, 48 m²): Far-west sanctuary with floor-to-ceiling skyline windows.
+  6. **Walk-in Dressing Wardrobe** (4m x 5m, 20 m²): Dedicated dressing gallery connecting to master bath.
+  7. **Master Bath & Spa** (4m x 5m, 20 m²): Luxury ensuite with travertine finishes and tub alcove.
+  8. **Guest Powder Room** (3m x 3m, 9 m²): Intimate guest powder room with brass trim.
+  9. **Grand Entrance Foyer** (6m x 4.5m, 27 m²): Private high-speed elevator arrival vestibule.
+  10. **Guest Bedroom Suite** (7m x 4.5m, 31.5 m²): Private suite on the southeastern wing.
+- **Ceiling Height**: 3.4m across all interior zones with continuous baseboards and crown molding.
+- **Interactive Door System**:
+  - Reusable `<Door>` component supporting hinged swing doors and sliding glass doors.
+  - Rapier kinematic colliders that update seamlessly when doors open or close.
+  - Camera center raycast detection (2.4m range): crosshair expands with prompt `"[E] Open door"`.
+  - Generic `<Interactable>` registry ready for future lighting, appliances, and fixtures.
+- **Navigation & Teleportation**:
+  - Tactical SVG **Mini-Map** in the bottom-left with player position dot and real-time vision cone.
+  - **Room Banner** that fades in smoothly upon entering new rooms.
+  - **Directory / Fast Travel** with smooth cinematic fade-to-black transitions.
+  - Default spawn in the Grand Living Gallery facing the skyline windows.
 
 ---
 
@@ -52,6 +71,7 @@ npm run start
 |---|---|
 | **W, A, S, D** / **Arrow Keys** | Walk / Move horizontally |
 | **Mouse Look** | Rotate camera (Pointer Lock) |
+| **E Key** / **Left Click** | Interact / Open & Close Doors |
 | **Shift** (Hold) | Sprint with dynamic FOV kick |
 | **Spacebar** | Jump / Step-up |
 | **C Key** | Crouch (lowers eye level to 1.0m) |
@@ -62,6 +82,7 @@ npm run start
 |---|---|
 | **Left Half of Screen** | Floating Virtual Analog Joystick for movement |
 | **Right Half of Screen** | Drag / Swipe to look around |
+| **Action Button** (Sparkles) | Open & Close Doors / Interact |
 | **Jump Button** (Arrow Up) | Jump |
 | **Crouch Button** (Arrow Down) | Toggle Crouch |
 | **Sprint Button** (Flame) | Sprint |
@@ -103,16 +124,24 @@ vercel
 ├── components/
 │   ├── canvas/
 │   │   └── PenthouseCanvas.tsx # WebGL R3F Canvas with Rapier physics engine
+│   ├── doors/
+│   │   └── Door.tsx           # Reusable hinged and sliding door with kinematic colliders
+│   ├── interaction/
+│   │   └── InteractionManager.tsx # Raycaster interaction detection system
 │   ├── intro/
 │   │   └── IntroOverlay.tsx   # Cinematic title, loading bar & controls guide
 │   ├── mobile/
 │   │   └── MobileControls.tsx # Touch joystick, touch-drag look & action buttons
+│   ├── navigation/
+│   │   ├── MiniMap.tsx        # Bottom-left SVG tactical floor plan & vision cone
+│   │   ├── RoomBanner.tsx     # Top room label banner that fades in on entry
+│   │   └── TeleportMenu.tsx   # Fast travel directory with fade-to-black overlay
 │   ├── player/
 │   │   └── Player.tsx         # Rapier capsule physics, camera sync, head bob & crouch
 │   ├── room/
-│   │   └── TestRoom.tsx       # 3.4m ceiling room, travertine tiles, window wall & skyline
+│   │   └── PenthouseShell.tsx # Full 10-room architectural layout, colliders & sky terrace
 │   ├── ui/
-│   │   └── HUD.tsx            # Crosshair dot, pause menu & WebGL fallback modal
+│   │   └── HUD.tsx            # Dynamic crosshair dot, pause menu & WebGL fallback modal
 │   └── PenthouseExperience.tsx# Dynamic client orchestrator (SSR: false)
 ├── hooks/
 │   ├── useDeviceDetect.ts     # Touch device auto-detection hook

@@ -1,12 +1,14 @@
 'use client';
 
-import React, { useRef, useCallback, useEffect } from 'react';
+import React, { useCallback, useEffect } from 'react';
 import * as THREE from 'three';
 import { Canvas } from '@react-three/fiber';
 import { Physics } from '@react-three/rapier';
-import { TestRoom } from '@/components/room/TestRoom';
+import { PenthouseShell } from '@/components/room/PenthouseShell';
 import { Player } from '@/components/player/Player';
+import { InteractionManager } from '@/components/interaction/InteractionManager';
 import { useGameStore } from '@/store/useGameStore';
+import { PLAYER_CONFIG } from '@/lib/config';
 
 interface PenthouseCanvasProps {
   canvasContainerRef: React.RefObject<HTMLDivElement | null>;
@@ -19,7 +21,6 @@ export const PenthouseCanvas: React.FC<PenthouseCanvasProps> = ({ canvasContaine
   const isMobile = useGameStore((s) => s.isMobile);
   const resumeGame = useGameStore((s) => s.resumeGame);
 
-  // Check WebGL availability safely on mount
   useEffect(() => {
     try {
       const canvas = document.createElement('canvas');
@@ -32,7 +33,6 @@ export const PenthouseCanvas: React.FC<PenthouseCanvasProps> = ({ canvasContaine
     }
   }, [setWebGlSupported]);
 
-  // Click handler to re-engage pointer lock when in-game and paused
   const handleCanvasClick = useCallback(() => {
     if (isMobile) return;
     if (isStarted && isPaused) {
@@ -49,10 +49,10 @@ export const PenthouseCanvas: React.FC<PenthouseCanvasProps> = ({ canvasContaine
       <Canvas
         shadows
         camera={{
-          fov: 75,
+          fov: PLAYER_CONFIG.baseFov,
           near: 0.1,
           far: 500,
-          position: [0, 1.8, 2],
+          position: PLAYER_CONFIG.spawnPosition,
         }}
         gl={{
           antialias: true,
@@ -62,12 +62,13 @@ export const PenthouseCanvas: React.FC<PenthouseCanvasProps> = ({ canvasContaine
         }}
         dpr={[1, Math.min(2, typeof window !== 'undefined' ? window.devicePixelRatio : 1.5)]}
       >
-        <color attach="background" args={['#F0F6F9']} />
+        <color attach="background" args={['#EEF5F9']} />
 
         {/* Rapier Physics World */}
         <Physics gravity={[0, -9.81, 0]}>
-          <TestRoom />
+          <PenthouseShell />
           <Player />
+          <InteractionManager />
         </Physics>
       </Canvas>
     </div>
