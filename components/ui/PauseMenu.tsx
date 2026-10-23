@@ -5,20 +5,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useGameStore, QualityPreset } from '@/store/useGameStore';
 import { ARCHITECTURE_CONFIG } from '@/lib/config';
 import {
-  Play,
-  Camera,
-  MapPin,
-  Settings,
-  HelpCircle,
-  LogOut,
-  Sliders,
-  Volume2,
-  VolumeX,
-  Eye,
-  Maximize,
-  Sparkles,
-  Lightbulb,
-  Activity,
+  Play, Camera, MapPin, Settings, HelpCircle, LogOut,
+  Sliders, Volume2, VolumeX, Eye, Maximize, Sparkles, Lightbulb, Activity,
 } from 'lucide-react';
 
 const CONTROLS_LIST = [
@@ -28,8 +16,8 @@ const CONTROLS_LIST = [
   { label: 'Sprint', keys: 'Shift (Hold)' },
   { label: 'Jump / Stand Up', keys: 'Spacebar' },
   { label: 'Crouch', keys: 'C Key' },
+  { label: 'Toggle Mute', keys: 'M Key' },
   { label: 'Photo Mode', keys: 'P Key' },
-  { label: 'Perf Stats', keys: 'F3 / O Key' },
 ];
 
 interface PauseMenuProps {
@@ -46,6 +34,7 @@ export const PauseMenu: React.FC<PauseMenuProps> = ({ onRequestPointerLock }) =>
   const triggerTeleport = useGameStore((s) => s.triggerTeleport);
   const settings = useGameStore((s) => s.settings);
   const updateSettings = useGameStore((s) => s.updateSettings);
+  const toggleMute = useGameStore((s) => s.toggleMute);
   const lightingStates = useGameStore((s) => s.lightingStates);
   const toggleRoomLight = useGameStore((s) => s.toggleRoomLight);
   const setAllLights = useGameStore((s) => s.setAllLights);
@@ -54,9 +43,12 @@ export const PauseMenu: React.FC<PauseMenuProps> = ({ onRequestPointerLock }) =>
 
   const [activeTab, setActiveTab] = useState<'menu' | 'lighting' | 'teleport' | 'controls' | 'settings'>('menu');
 
-  if (!isStarted || !isPaused || isPhotoMode) {
-    return null;
-  }
+  if (!isStarted || !isPaused || isPhotoMode) return null;
+
+  const handleResume = () => {
+    resumeGame();
+    onRequestPointerLock?.();
+  };
 
   const handleToggleFullscreen = () => {
     if (!document.fullscreenElement) {
@@ -114,63 +106,48 @@ export const PauseMenu: React.FC<PauseMenuProps> = ({ onRequestPointerLock }) =>
           {activeTab === 'menu' && (
             <div className="space-y-3 pt-1">
               <button
-                onClick={resumeGame}
+                onClick={handleResume}
                 className="w-full py-3.5 px-4 rounded-xl bg-gradient-to-r from-[#C5A059] via-[#D4AF37] to-[#B8963D] text-[#1E1B15] font-serif text-base tracking-[0.15em] uppercase font-semibold flex items-center justify-center gap-2 shadow-md hover:brightness-105 active:scale-[0.99] transition-all cursor-pointer"
               >
-                <Play className="w-4 h-4 fill-current" />
-                Resume Walkthrough
+                <Play className="w-4 h-4 fill-current" /> Resume Walkthrough
               </button>
-
               <button
-                onClick={() => {
-                  resumeGame();
-                  setPhotoMode(true);
-                }}
+                onClick={() => { resumeGame(); setPhotoMode(true); }}
                 className="w-full py-3 px-4 rounded-xl bg-[#FFFDF9] border border-[#DDD3C3] text-[#4A453B] font-medium text-xs tracking-wider uppercase flex items-center justify-center gap-2 hover:bg-[#F3EFE6] transition-colors cursor-pointer"
               >
-                <Camera className="w-4 h-4 text-[#8C7443]" />
-                Enter Photo Mode
+                <Camera className="w-4 h-4 text-[#8C7443]" /> Enter Photo Mode
               </button>
-
               <button
                 onClick={() => setActiveTab('lighting')}
                 className="w-full py-3 px-4 rounded-xl bg-[#FFFDF9] border border-[#DDD3C3] text-[#4A453B] font-medium text-xs tracking-wider uppercase flex items-center justify-center gap-2 hover:bg-[#F3EFE6] transition-colors cursor-pointer"
               >
-                <Lightbulb className="w-4 h-4 text-[#8C7443]" />
-                Scene Lighting Panel
+                <Lightbulb className="w-4 h-4 text-[#8C7443]" /> Scene Lighting Panel
               </button>
-
               <button
                 onClick={() => setActiveTab('teleport')}
                 className="w-full py-3 px-4 rounded-xl bg-[#FFFDF9] border border-[#DDD3C3] text-[#4A453B] font-medium text-xs tracking-wider uppercase flex items-center justify-center gap-2 hover:bg-[#F3EFE6] transition-colors cursor-pointer"
               >
-                <MapPin className="w-4 h-4 text-[#8C7443]" />
-                Fast Travel Directory
+                <MapPin className="w-4 h-4 text-[#8C7443]" /> Fast Travel Directory
               </button>
-
               <div className="grid grid-cols-2 gap-3 pt-1">
                 <button
                   onClick={() => setActiveTab('controls')}
                   className="py-2.5 px-3 rounded-xl bg-[#FFFDF9] border border-[#DDD3C3] text-[#4A453B] font-medium text-xs tracking-wider uppercase flex items-center justify-center gap-1.5 hover:bg-[#F3EFE6] transition-colors cursor-pointer"
                 >
-                  <HelpCircle className="w-3.5 h-3.5 text-[#8C7443]" />
-                  Controls
+                  <HelpCircle className="w-3.5 h-3.5 text-[#8C7443]" /> Controls
                 </button>
                 <button
                   onClick={() => setActiveTab('settings')}
                   className="py-2.5 px-3 rounded-xl bg-[#FFFDF9] border border-[#DDD3C3] text-[#4A453B] font-medium text-xs tracking-wider uppercase flex items-center justify-center gap-1.5 hover:bg-[#F3EFE6] transition-colors cursor-pointer"
                 >
-                  <Settings className="w-3.5 h-3.5 text-[#8C7443]" />
-                  Settings
+                  <Settings className="w-3.5 h-3.5 text-[#8C7443]" /> Settings
                 </button>
               </div>
-
               <button
                 onClick={exitToIntro}
                 className="w-full py-2.5 px-4 text-xs font-mono text-neutral-400 hover:text-red-700 flex items-center justify-center gap-1.5 transition-colors cursor-pointer pt-2"
               >
-                <LogOut className="w-3 h-3" />
-                Return to Title Screen
+                <LogOut className="w-3 h-3" /> Return to Title Screen
               </button>
             </div>
           )}
@@ -192,28 +169,18 @@ export const PauseMenu: React.FC<PauseMenuProps> = ({ onRequestPointerLock }) =>
                   Turn All Off
                 </button>
               </div>
-
               <div className="grid grid-cols-2 gap-2 text-xs">
                 {roomsList.map((room) => {
                   const key = room.id;
                   const isOn = lightingStates[key] ?? true;
                   return (
-                    <div
-                      key={key}
-                      className="p-2.5 rounded-xl border border-[#E8DFD1] bg-[#FFFDF9] flex items-center justify-between"
-                    >
+                    <div key={key} className="p-2.5 rounded-xl border border-[#E8DFD1] bg-[#FFFDF9] flex items-center justify-between">
                       <span className="truncate pr-1 font-medium text-neutral-700">{room.name}</span>
                       <button
                         onClick={() => toggleRoomLight(key)}
-                        className={`w-8 h-4 rounded-full transition-colors relative cursor-pointer ${
-                          isOn ? 'bg-[#C5A059]' : 'bg-neutral-300'
-                        }`}
+                        className={`w-8 h-4 rounded-full transition-colors relative cursor-pointer ${isOn ? 'bg-[#C5A059]' : 'bg-neutral-300'}`}
                       >
-                        <span
-                          className={`absolute top-0.5 w-3 h-3 rounded-full bg-white transition-transform ${
-                            isOn ? 'left-4.5' : 'left-0.5'
-                          }`}
-                        />
+                        <span className={`absolute top-0.5 w-3 h-3 rounded-full bg-white transition-transform ${isOn ? 'left-4.5' : 'left-0.5'}`} />
                       </button>
                     </div>
                   );
@@ -298,10 +265,20 @@ export const PauseMenu: React.FC<PauseMenuProps> = ({ onRequestPointerLock }) =>
                     className="w-full accent-[#C5A059] cursor-pointer"
                   />
                   <button
-                    onClick={() => updateSettings({ isMuted: !settings.isMuted })}
-                    className="px-2 py-1 rounded-md text-[10px] font-mono border border-[#DDD3C3] hover:bg-[#F3EFE6] cursor-pointer"
+                    onClick={toggleMute}
+                    className="px-2.5 py-1 rounded-md text-[10px] font-mono border border-[#DDD3C3] bg-[#FFFDF9] hover:bg-[#F3EFE6] flex items-center gap-1 cursor-pointer transition-colors"
                   >
-                    {settings.isMuted ? 'Unmute' : 'Mute'}
+                    {settings.isMuted ? (
+                      <>
+                        <Volume2 className="w-3 h-3 text-[#8C7443]" />
+                        <span>Unmute</span>
+                      </>
+                    ) : (
+                      <>
+                        <VolumeX className="w-3 h-3 text-red-500" />
+                        <span>Mute</span>
+                      </>
+                    )}
                   </button>
                 </div>
               </div>
@@ -369,8 +346,7 @@ export const PauseMenu: React.FC<PauseMenuProps> = ({ onRequestPointerLock }) =>
                   onClick={handleToggleFullscreen}
                   className="w-full py-2 px-3 rounded-lg border border-[#DDD3C3] bg-[#FFFDF9] hover:bg-[#F3EFE6] text-xs font-mono text-neutral-700 flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
                 >
-                  <Maximize className="w-3.5 h-3.5 text-[#8C7443]" />
-                  Toggle Fullscreen
+                  <Maximize className="w-3.5 h-3.5 text-[#8C7443]" /> Toggle Fullscreen
                 </button>
               </div>
             </div>
@@ -380,3 +356,5 @@ export const PauseMenu: React.FC<PauseMenuProps> = ({ onRequestPointerLock }) =>
     </AnimatePresence>
   );
 };
+
+export default PauseMenu;

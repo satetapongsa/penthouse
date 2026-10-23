@@ -52,11 +52,10 @@ export function useKeyboardControls() {
         return;
       }
 
-      // 'M' key toggles audio mute
+      // 'M' key toggles audio mute with toast notification (works while pointer is locked)
       if (e.code === 'KeyM') {
         e.preventDefault();
-        const isMuted = useGameStore.getState().settings.isMuted;
-        useGameStore.getState().updateSettings({ isMuted: !isMuted });
+        useGameStore.getState().toggleMute();
         return;
       }
 

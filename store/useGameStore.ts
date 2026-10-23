@@ -13,10 +13,43 @@ import {
 
 export * from './gameStoreTypes';
 
+const AUDIO_STORAGE_KEY = 'penthouse_audio_settings';
+
+const getInitialAudioSettings = () => {
+  if (typeof window === 'undefined') return { volume: 0.7, isMuted: false };
+  try {
+    const raw = localStorage.getItem(AUDIO_STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      return {
+        volume: typeof parsed.volume === 'number' ? parsed.volume : 0.7,
+        isMuted: typeof parsed.isMuted === 'boolean' ? parsed.isMuted : false,
+      };
+    }
+  } catch {
+    // Ignore error in restricted/SSR environments
+  }
+  return { volume: 0.7, isMuted: false };
+};
+
+const saveAudioSettings = (volume: number, isMuted: boolean) => {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.setItem(AUDIO_STORAGE_KEY, JSON.stringify({ volume, isMuted }));
+  } catch {
+    // Ignore quota/security errors
+  }
+};
+
+let toastTimeout: ReturnType<typeof setTimeout> | null = null;
+
+const initialAudio = getInitialAudioSettings();
+
 export const useGameStore = create<GameStore>((set, get) => ({
   gameState: 'intro',
   isStarted: false,
   isPaused: false,
+  isPointerLocked: false,
   isMobile: false,
   webGlSupported: true,
 
@@ -25,6 +58,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
   isPhotoMode: false,
   screenshotTrigger: 0,
   showPerf: false,
+  muteToast: null,
 
   controls: { ...INITIAL_CONTROLS },
   joystickVector: { x: 0, y: 0 },
@@ -54,12 +88,17 @@ export const useGameStore = create<GameStore>((set, get) => ({
   jacuzziJetsOn: false,
   isNearJacuzzi: false,
 
-  settings: { ...INITIAL_SETTINGS },
+  settings: {
+    ...INITIAL_SETTINGS,
+    volume: initialAudio.volume,
+    isMuted: initialAudio.isMuted,
+  },
 
   setGameState: (gameState) => set({ gameState }),
 
   startGame: () => {
-    audioEngine.init();
+    const current = get().settings;
+    audioEngine.init(current.volume, current.isMuted);
     audioEngine.startAmbientMusic();
     audioEngine.setFireplace(get().fireplaceOn);
     set({ gameState: 'playing', isStarted: true, isPaused: false });
@@ -97,6 +136,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       gameState: 'intro',
       isStarted: false,
       isPaused: false,
+      isPointerLocked: false,
       posture: 'standing',
       postureTarget: null,
       controls: { ...INITIAL_CONTROLS },
@@ -105,6 +145,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
     });
   },
 
+  setPointerLocked: (isPointerLocked) => set({ isPointerLocked }),
   setIsMobile: (isMobile) => set({ isMobile }),
   setWebGlSupported: (webGlSupported) => set({ webGlSupported }),
 
@@ -314,6 +355,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       if (typeof partial.volume === 'number') audioEngine.setVolume(partial.volume);
       if (typeof partial.isMuted === 'boolean') audioEngine.setMuted(partial.isMuted);
       if (partial.quality) state.setQuality(partial.quality);
+      saveAudioSettings(updated.volume, updated.isMuted);
       return { settings: updated };
     });
   },
@@ -321,4 +363,18 @@ export const useGameStore = create<GameStore>((set, get) => ({
   resetSettings: () => {
     set({ settings: { ...INITIAL_SETTINGS } });
   },
+
+  toggleMute: () => {
+    const currentMuted = get().settings.isMuted;
+    const nextMuted = !currentMuted;
+    get().updateSettings({ isMuted: nextMuted });
+    const toast = nextMuted ? 'Sound off' : 'Sound on';
+    set({ muteToast: toast });
+    if (toastTimeout) clearTimeout(toastTimeout);
+    toastTimeout = setTimeout(() => {
+      set({ muteToast: null });
+    }, 1100);
+  },
+
+  setMuteToast: (muteToast) => set({ muteToast }),
 }));

@@ -20,11 +20,16 @@ class PenthouseAudioEngine {
   private getContext(): AudioContext | null {
     if (typeof window === 'undefined') return null;
     if (!this.ctx) {
-      const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+      const AudioCtx =
+        window.AudioContext ||
+        (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
       if (AudioCtx) {
         this.ctx = new AudioCtx();
         this.masterGain = this.ctx.createGain();
-        this.masterGain.gain.setValueAtTime(this.isMuted ? 0 : this.currentVolume, this.ctx.currentTime);
+        this.masterGain.gain.setValueAtTime(
+          this.isMuted ? 0 : this.currentVolume,
+          this.ctx.currentTime
+        );
         this.masterGain.connect(this.ctx.destination);
 
         this.musicGain = this.ctx.createGain();
@@ -47,8 +52,18 @@ class PenthouseAudioEngine {
     return this.ctx;
   }
 
-  public init(): void {
-    this.getContext();
+  public init(initialVolume?: number, initialMuted?: boolean): void {
+    if (typeof initialVolume === 'number') {
+      this.currentVolume = Math.max(0, Math.min(1, initialVolume));
+    }
+    if (typeof initialMuted === 'boolean') {
+      this.isMuted = initialMuted;
+    }
+    const ctx = this.getContext();
+    if (ctx && this.masterGain) {
+      const target = this.isMuted ? 0 : this.currentVolume;
+      this.masterGain.gain.setValueAtTime(target, ctx.currentTime);
+    }
   }
 
   public setVolume(volume: number): void {
@@ -65,6 +80,14 @@ class PenthouseAudioEngine {
       const target = muted ? 0 : this.currentVolume;
       this.masterGain.gain.setTargetAtTime(target, this.ctx.currentTime, 0.05);
     }
+  }
+
+  public getIsMuted(): boolean {
+    return this.isMuted;
+  }
+
+  public getVolume(): number {
+    return this.currentVolume;
   }
 
   // 1. Footstep Sound Synthesis
@@ -214,14 +237,30 @@ class PenthouseAudioEngine {
   }
 
   // Continuous loop delegates
-  public setWind(active: boolean): void { this.loops.setWind(active); }
-  public setFaucet(active: boolean): void { this.loops.setFaucet(active); }
-  public setShower(active: boolean): void { this.loops.setShower(active); }
-  public setFireplace(active: boolean): void { this.loops.setFireplace(active, this.isMuted); }
-  public setPoolNear(active: boolean): void { this.loops.setPoolNear(active); }
-  public setBreathing(active: boolean): void { this.loops.setBreathing(active); }
-  public startAmbientMusic(): void { this.loops.startAmbientMusic(this.isMuted); }
-  public stopAmbientMusic(): void { this.loops.stopAmbientMusic(); }
+  public setWind(active: boolean): void {
+    this.loops.setWind(active);
+  }
+  public setFaucet(active: boolean): void {
+    this.loops.setFaucet(active);
+  }
+  public setShower(active: boolean): void {
+    this.loops.setShower(active);
+  }
+  public setFireplace(active: boolean): void {
+    this.loops.setFireplace(active, this.isMuted);
+  }
+  public setPoolNear(active: boolean): void {
+    this.loops.setPoolNear(active);
+  }
+  public setBreathing(active: boolean): void {
+    this.loops.setBreathing(active);
+  }
+  public startAmbientMusic(): void {
+    this.loops.startAmbientMusic(this.isMuted);
+  }
+  public stopAmbientMusic(): void {
+    this.loops.stopAmbientMusic();
+  }
 }
 
 export const audioEngine = new PenthouseAudioEngine();

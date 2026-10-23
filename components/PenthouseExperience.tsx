@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useRef, useCallback } from 'react';
+import React, { useRef, useCallback, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import { useGameStore } from '@/store/useGameStore';
 import { useKeyboardControls } from '@/hooks/useKeyboardControls';
@@ -8,6 +8,7 @@ import { useDeviceDetect } from '@/hooks/useDeviceDetect';
 import { IntroOverlay } from '@/components/intro/IntroOverlay';
 import { HUD } from '@/components/ui/HUD';
 import { MobileControls } from '@/components/mobile/MobileControls';
+import { requestCanvasPointerLock } from '@/lib/pointerLock';
 
 // Dynamically load the WebGL Three.js Canvas with ssr: false
 const PenthouseCanvas = dynamic(
@@ -35,27 +36,49 @@ export const PenthouseExperience: React.FC = () => {
   const isMobile = useGameStore((s) => s.isMobile);
   const startGame = useGameStore((s) => s.startGame);
 
-  // Helper to request pointer lock on the canvas element
+  // Unified pointer lock requester
   const requestPointerLock = useCallback(() => {
     if (isMobile) return;
-    try {
-      const canvasEl = containerRef.current?.querySelector('canvas');
-      if (canvasEl && document.pointerLockElement !== canvasEl) {
-        canvasEl.requestPointerLock();
-      }
-    } catch (err) {
-      console.warn('Pointer lock request error:', err);
-    }
+    const canvas = containerRef.current?.querySelector('canvas') || document.querySelector('canvas');
+    requestCanvasPointerLock(canvas);
   }, [isMobile]);
 
-  // Handle Enter button from intro
+  // Synchronous Enter handler inside direct user activation gesture
   const handleEnter = useCallback(() => {
     startGame();
-    // Slight tick delay allows state to transition before locking pointer
-    setTimeout(() => {
-      requestPointerLock();
-    }, 50);
-  }, [startGame, requestPointerLock]);
+    if (!isMobile) {
+      const canvas = containerRef.current?.querySelector('canvas') || document.querySelector('canvas');
+      requestCanvasPointerLock(canvas);
+    }
+  }, [startGame, isMobile]);
+
+  // Single global pointer lock state sync and pause-on-lock-loss listener
+  useEffect(() => {
+    const handlePointerLockChange = () => {
+      const canvas = document.querySelector('canvas');
+      const isLocked = !!canvas && document.pointerLockElement === canvas;
+      useGameStore.getState().setPointerLocked(isLocked);
+
+      // Lock dropped (e.g. Esc pressed) while actively exploring -> trigger pause menu
+      const { isStarted, isPaused, isMobile: mobile, isPhotoMode, pauseGame } = useGameStore.getState();
+      if (!isLocked && isStarted && !isPaused && !mobile && !isPhotoMode) {
+        pauseGame();
+      }
+    };
+
+    const handlePointerLockError = () => {
+      // Gracefully handle browser cooldown delay without breaking state
+      useGameStore.getState().setPointerLocked(false);
+    };
+
+    document.addEventListener('pointerlockchange', handlePointerLockChange);
+    document.addEventListener('pointerlockerror', handlePointerLockError);
+
+    return () => {
+      document.removeEventListener('pointerlockchange', handlePointerLockChange);
+      document.removeEventListener('pointerlockerror', handlePointerLockError);
+    };
+  }, []);
 
   return (
     <main className="relative w-screen h-screen overflow-hidden bg-[#FAF8F3]">
@@ -65,7 +88,7 @@ export const PenthouseExperience: React.FC = () => {
       {/* Intro Experience Overlay */}
       <IntroOverlay onEnter={handleEnter} />
 
-      {/* HUD (Crosshair, Pause Menu & WebGL notification) */}
+      {/* HUD (Crosshair, Pause Menu, Mute, Click to Resume & Navigation) */}
       <HUD onRequestPointerLock={requestPointerLock} />
 
       {/* Mobile Touch Navigation Overlay */}

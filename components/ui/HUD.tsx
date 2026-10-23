@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useGameStore } from '@/store/useGameStore';
 import { MiniMap } from '@/components/navigation/MiniMap';
 import { TeleportMenu } from '@/components/navigation/TeleportMenu';
@@ -14,6 +15,9 @@ import {
   Sparkles,
   Camera,
   Activity,
+  Volume2,
+  VolumeX,
+  MousePointer,
 } from 'lucide-react';
 
 interface HUDProps {
@@ -23,6 +27,7 @@ interface HUDProps {
 export const HUD: React.FC<HUDProps> = ({ onRequestPointerLock }) => {
   const isStarted = useGameStore((s) => s.isStarted);
   const isPaused = useGameStore((s) => s.isPaused);
+  const isPointerLocked = useGameStore((s) => s.isPointerLocked);
   const pauseGame = useGameStore((s) => s.pauseGame);
   const isPhotoMode = useGameStore((s) => s.isPhotoMode);
   const setPhotoMode = useGameStore((s) => s.setPhotoMode);
@@ -34,6 +39,10 @@ export const HUD: React.FC<HUDProps> = ({ onRequestPointerLock }) => {
   const quality = useGameStore((s) => s.quality);
   const showPerf = useGameStore((s) => s.showPerf);
   const togglePerf = useGameStore((s) => s.togglePerf);
+
+  const settings = useGameStore((s) => s.settings);
+  const toggleMute = useGameStore((s) => s.toggleMute);
+  const muteToast = useGameStore((s) => s.muteToast);
 
   if (!isStarted) {
     return null;
@@ -115,6 +124,23 @@ export const HUD: React.FC<HUDProps> = ({ onRequestPointerLock }) => {
             <Camera className="w-4 h-4 text-[#8C7443]" />
           </button>
 
+          {/* Audio Mute Button (Volume2 / VolumeX) */}
+          <button
+            onClick={toggleMute}
+            title={settings.isMuted ? 'Unmute Audio (M)' : 'Mute Audio (M)'}
+            className={`w-9 h-9 rounded-full backdrop-blur-md border transition-all flex items-center justify-center cursor-pointer shadow-lg ${
+              settings.isMuted
+                ? 'bg-[#2E1A1A]/90 border-red-400/60 text-red-400 hover:bg-[#3D2222]'
+                : 'bg-[#FFFDF9]/90 border-[#C5A059]/40 text-[#4A453B] hover:bg-[#F5EFE6]'
+            }`}
+          >
+            {settings.isMuted ? (
+              <VolumeX className="w-4 h-4 text-red-500" />
+            ) : (
+              <Volume2 className="w-4 h-4 text-[#8C7443]" />
+            )}
+          </button>
+
           {/* Pause Button */}
           <button
             onClick={pauseGame}
@@ -126,7 +152,7 @@ export const HUD: React.FC<HUDProps> = ({ onRequestPointerLock }) => {
         </div>
       )}
 
-      {/* -------------------- 3. TOP LEFT ARCHITECTURAL BRANDING -------------------- */}
+      {/* -------------------- 3. TOP LEFT ARCHITECTURAL BRANDING & MUTED BADGE -------------------- */}
       {!isPaused && !isPhotoMode && (
         <div className="fixed top-5 left-5 z-40 pointer-events-none select-none">
           <div className="text-[10px] font-mono tracking-[0.25em] text-[#8C7443] uppercase">
@@ -135,10 +161,59 @@ export const HUD: React.FC<HUDProps> = ({ onRequestPointerLock }) => {
           <h1 className="font-serif text-lg tracking-widest text-[#2D2A26] uppercase">
             The Skyline Penthouse
           </h1>
+          {/* Persistent Muted Indicator in HUD corner */}
+          {settings.isMuted && (
+            <div className="mt-1.5 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#1A1816]/85 border border-red-500/40 text-red-300 text-[10px] font-mono tracking-wider">
+              <VolumeX className="w-3 h-3 text-red-400" />
+              <span>SOUND MUTED (M)</span>
+            </div>
+          )}
         </div>
       )}
 
-      {/* -------------------- 4. NAVIGATION SUITE -------------------- */}
+      {/* -------------------- 4. AUDIO MUTE/UNMUTE TOAST -------------------- */}
+      <AnimatePresence>
+        {muteToast && (
+          <motion.div
+            initial={{ opacity: 0, y: -15, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -15, scale: 0.95 }}
+            transition={{ duration: 0.2 }}
+            className="fixed top-20 left-1/2 -translate-x-1/2 z-50 pointer-events-none flex items-center gap-2 px-4 py-2 rounded-full bg-[#1A1816]/90 border border-[#C5A059]/50 shadow-2xl backdrop-blur-md text-[#FAF8F3] text-xs font-mono tracking-wider select-none"
+          >
+            {settings.isMuted ? (
+              <VolumeX className="w-4 h-4 text-red-400" />
+            ) : (
+              <Volume2 className="w-4 h-4 text-[#D4AF37]" />
+            )}
+            <span>{muteToast}</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* -------------------- 5. CLICK TO RESUME OVERLAY (WHEN UNLOCKED BUT ACTIVE) -------------------- */}
+      {!isPaused && !isPointerLocked && !isMobile && !isPhotoMode && (
+        <div
+          onClick={onRequestPointerLock}
+          className="fixed inset-0 z-35 flex items-center justify-center bg-black/20 backdrop-blur-[2px] cursor-pointer select-none"
+        >
+          <div className="flex flex-col items-center gap-2 px-6 py-4 rounded-2xl bg-[#FAF8F3]/95 border border-[#C5A059]/60 shadow-2xl text-center hover:scale-105 transition-transform">
+            <div className="w-9 h-9 rounded-full bg-[#F3EDE2] border border-[#C5A059]/40 flex items-center justify-center text-[#8C7443]">
+              <MousePointer className="w-4 h-4 animate-bounce" />
+            </div>
+            <div>
+              <div className="font-serif text-sm tracking-wider uppercase text-[#2D2A26] font-medium">
+                Click to Resume Mouse Look
+              </div>
+              <div className="text-[10px] font-mono text-[#8C7443] mt-0.5">
+                Press ESC to pause · M to mute sound
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* -------------------- 6. NAVIGATION SUITE -------------------- */}
       {!isPaused && !isPhotoMode && (
         <>
           <MiniMap />
@@ -146,10 +221,10 @@ export const HUD: React.FC<HUDProps> = ({ onRequestPointerLock }) => {
         </>
       )}
 
-      {/* -------------------- 5. ARCHITECTURAL PHOTO STUDIO -------------------- */}
+      {/* -------------------- 7. ARCHITECTURAL PHOTO STUDIO -------------------- */}
       <PhotoModeOverlay />
 
-      {/* -------------------- 6. PAUSE MENU & SETTINGS MODAL -------------------- */}
+      {/* -------------------- 8. PAUSE MENU & SETTINGS MODAL -------------------- */}
       <PauseMenu onRequestPointerLock={onRequestPointerLock} />
     </>
   );

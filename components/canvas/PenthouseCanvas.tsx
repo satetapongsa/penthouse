@@ -12,6 +12,7 @@ import { InteractionManager } from '@/components/interaction/InteractionManager'
 import { PostProcessingEffects } from '@/components/canvas/PostProcessingEffects';
 import { useGameStore } from '@/store/useGameStore';
 import { PLAYER_CONFIG } from '@/lib/config';
+import { requestCanvasPointerLock } from '@/lib/pointerLock';
 
 interface PenthouseCanvasProps {
   canvasContainerRef: React.RefObject<HTMLDivElement | null>;
@@ -59,14 +60,21 @@ export const PenthouseCanvas: React.FC<PenthouseCanvasProps> = ({ canvasContaine
     }
   }, [screenshotTrigger, canvasContainerRef]);
 
+  // Handle Canvas Click: request pointer lock and resume if paused
   const handleCanvasClick = useCallback(() => {
     if (isMobile) return;
-    if (isStarted && isPaused) {
-      resumeGame();
+    if (isStarted) {
+      if (isPaused) {
+        resumeGame();
+      }
+      const canvasEl =
+        canvasContainerRef.current?.querySelector('canvas') ||
+        (document.querySelector('canvas') as HTMLCanvasElement | null);
+      requestCanvasPointerLock(canvasEl);
     }
-  }, [isMobile, isStarted, isPaused, resumeGame]);
+  }, [isMobile, isStarted, isPaused, resumeGame, canvasContainerRef]);
 
-  // Capped DPR strictly per quality tier (Low 0.75, Medium 1, High 1.25, Ultra 1.5, never above 1.5)
+  // Capped DPR strictly per quality tier (Low 0.75, Medium 1, High 1.25, Ultra 1.5)
   const targetDpr =
     quality === 'low'
       ? 0.75

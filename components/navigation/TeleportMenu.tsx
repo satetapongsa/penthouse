@@ -28,15 +28,15 @@ export const TeleportMenu: React.FC = () => {
 
   return (
     <>
-      {/* -------------------- 1. TOP-RIGHT FAST TRAVEL TRIGGER BUTTON -------------------- */}
-      <div className="fixed top-5 right-5 z-40 select-none">
+      {/* -------------------- 1. FAST TRAVEL DIRECTORY TRIGGER BUTTON -------------------- */}
+      <div className="fixed top-16 right-5 z-40 select-none">
         <button
           onClick={() => setIsOpen(!isOpen)}
-          className="flex items-center gap-2 px-3.5 py-2 rounded-full bg-[#FFFDF9]/85 backdrop-blur-md border border-[#C5A059]/40 text-[#423E36] hover:bg-[#F7F2E7] active:scale-95 shadow-md transition-all cursor-pointer"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#FFFDF9]/90 backdrop-blur-md border border-[#C5A059]/40 text-[#423E36] hover:bg-[#F7F2E7] active:scale-95 shadow-md transition-all cursor-pointer"
           aria-label="Fast Travel Directory"
         >
-          <Compass className="w-4 h-4 text-[#8C7443] transition-transform duration-300 group-hover:rotate-45" />
-          <span className="text-[11px] font-medium tracking-wider uppercase">
+          <Compass className="w-3.5 h-3.5 text-[#8C7443] transition-transform duration-300 group-hover:rotate-45" />
+          <span className="text-[10px] font-mono tracking-wider uppercase">
             Directory
           </span>
         </button>
@@ -139,3 +139,5 @@ export const TeleportMenu: React.FC = () => {
     </>
   );
 };
+
+export default TeleportMenu;

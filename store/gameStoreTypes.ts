@@ -100,6 +100,7 @@ export interface GameStoreState {
   gameState: GameState;
   isStarted: boolean;
   isPaused: boolean;
+  isPointerLocked: boolean;
   isMobile: boolean;
   webGlSupported: boolean;
 
@@ -108,6 +109,7 @@ export interface GameStoreState {
   isPhotoMode: boolean;
   screenshotTrigger: number;
   showPerf: boolean;
+  muteToast: string | null;
 
   controls: ControlState;
   joystickVector: { x: number; y: number };
@@ -146,6 +148,7 @@ export interface GameStoreActions {
   pauseGame: () => void;
   resumeGame: () => void;
   exitToIntro: () => void;
+  setPointerLocked: (locked: boolean) => void;
   setIsMobile: (isMobile: boolean) => void;
   setWebGlSupported: (supported: boolean) => void;
 
@@ -193,6 +196,8 @@ export interface GameStoreActions {
 
   updateSettings: (partial: Partial<SettingsState>) => void;
   resetSettings: () => void;
+  toggleMute: () => void;
+  setMuteToast: (toast: string | null) => void;
 }
 
 export type GameStore = GameStoreState & GameStoreActions;

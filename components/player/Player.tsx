@@ -20,7 +20,6 @@ export const Player: React.FC = () => {
   const controls = useGameStore((s) => s.controls);
   const joystickVector = useGameStore((s) => s.joystickVector);
   const consumeLookDelta = useGameStore((s) => s.consumeLookDelta);
-  const pauseGame = useGameStore((s) => s.pauseGame);
   const settings = useGameStore((s) => s.settings);
 
   // Posture System
@@ -36,7 +35,7 @@ export const Player: React.FC = () => {
   const setPlayerPosition = useGameStore((s) => s.setPlayerPosition);
   const setIsNearJacuzzi = useGameStore((s) => s.setIsNearJacuzzi);
 
-  // Orientation State
+  // Orientation State (never reset by model loading)
   const yaw = useRef<number>(0);
   const pitch = useRef<number>(0);
 
@@ -63,7 +62,7 @@ export const Player: React.FC = () => {
     }
   }, [posture, postureTarget]);
 
-  // Setup Pointer Lock & Mouse Look for Desktop
+  // Unified Mouse Look for Desktop: reads movementX/movementY while pointer is locked
   useEffect(() => {
     if (isMobile) return;
 
@@ -75,28 +74,16 @@ export const Player: React.FC = () => {
       yaw.current -= e.movementX * sensitivity;
       pitch.current -= e.movementY * sensitivity;
 
-      const maxPitch = posture === 'lying' ? 1.55 : PLAYER_CONFIG.pitchLimit;
-      const minPitch = posture === 'lying' ? -1.55 : -PLAYER_CONFIG.pitchLimit;
-
-      pitch.current = Math.max(minPitch, Math.min(maxPitch, pitch.current));
-    };
-
-    const handlePointerLockChange = () => {
-      if (document.pointerLockElement !== gl.domElement) {
-        if (isStarted && !isPaused) {
-          pauseGame();
-        }
-      }
+      // Pitch clamp to ±85° (1.48 rad)
+      const pitchLimit = posture === 'lying' ? 1.55 : PLAYER_CONFIG.pitchLimit;
+      pitch.current = Math.max(-pitchLimit, Math.min(pitchLimit, pitch.current));
     };
 
     window.addEventListener('mousemove', handleMouseMove);
-    document.addEventListener('pointerlockchange', handlePointerLockChange);
-
     return () => {
       window.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('pointerlockchange', handlePointerLockChange);
     };
-  }, [gl.domElement, isMobile, isStarted, isPaused, pauseGame, settings.mouseSensitivity, posture]);
+  }, [gl.domElement, isMobile, isStarted, isPaused, settings.mouseSensitivity, posture]);
 
   useFrame((state, delta) => {
     if (!rigidBodyRef.current) return;
@@ -138,148 +125,65 @@ export const Player: React.FC = () => {
       return;
     }
 
-    // 3. Room Detection, Proximity to Jacuzzi & Minimap Sync
-    const now = performance.now();
-    if (now - lastPosSync.current > 60) {
-      lastPosSync.current = now;
-      setPlayerPosition({ x: pos.x, z: pos.z, yaw: yaw.current });
-
-      // Jacuzzi distance check (Center: [10.75, 0.4, -9.5])
-      const distToJacuzzi = Math.hypot(pos.x - 10.75, pos.z - (-9.5));
-      setIsNearJacuzzi(distToJacuzzi < 4.2);
+    // 3. Apply Look Rotation for Mobile Touch Look
+    if (isMobile) {
+      const deltaLook = consumeLookDelta();
+      const mobileSens = settings.mobileSensitivity;
+      yaw.current -= deltaLook.x * mobileSens;
+      pitch.current -= deltaLook.y * mobileSens;
+      const pitchLimit = posture === 'lying' ? 1.55 : PLAYER_CONFIG.pitchLimit;
+      pitch.current = Math.max(-pitchLimit, Math.min(pitchLimit, pitch.current));
     }
 
-    if (now - lastRoomCheck.current > 150) {
-      lastRoomCheck.current = now;
-      const rooms = Object.values(ARCHITECTURE_CONFIG.rooms);
-      for (const room of rooms) {
-        if (
-          pos.x >= room.bounds.minX &&
-          pos.x <= room.bounds.maxX &&
-          pos.z >= room.bounds.minZ &&
-          pos.z <= room.bounds.maxZ
-        ) {
-          setCurrentRoomId(room.id);
-          break;
-        }
+    // 4. Ground Check via Raycast
+    const rayOrigin = { x: pos.x, y: pos.y + 0.1, z: pos.z };
+    const rayDir = { x: 0, y: -1, z: 0 };
+    const ray = new rapier.Ray(rayOrigin, rayDir);
+    const hit = world.castRay(ray, 0.45, true);
+    isGrounded.current = hit !== null;
+
+    // 5. Posture System (Sitting / Lying)
+    if (posture !== 'standing') {
+      const now = performance.now();
+      const hasMovementInput =
+        controls.forward ||
+        controls.backward ||
+        controls.left ||
+        controls.right ||
+        controls.jump ||
+        Math.hypot(joystickVector.x, joystickVector.y) > 0.3;
+
+      if (hasMovementInput && now - enterPostureTime.current > 400 && postureTarget) {
+        body.setTranslation(
+          new THREE.Vector3(
+            postureTarget.returnPosition[0],
+            postureTarget.returnPosition[1],
+            postureTarget.returnPosition[2]
+          ),
+          true
+        );
+        yaw.current = postureTarget.returnYaw;
+        if (posture === 'sitting') exitSitting();
+        else exitLying();
+        return;
       }
-    }
 
-    // 4. Consume Mobile Touch Look Delta
-    if (isStarted && !isPaused) {
-      const mobileDelta = consumeLookDelta();
-      if (mobileDelta.x !== 0 || mobileDelta.y !== 0) {
-        yaw.current -= mobileDelta.x * settings.mobileSensitivity;
-        pitch.current -= mobileDelta.y * settings.mobileSensitivity;
-        const maxPitch = posture === 'lying' ? 1.55 : PLAYER_CONFIG.pitchLimit;
-        const minPitch = posture === 'lying' ? -1.55 : -PLAYER_CONFIG.pitchLimit;
-        pitch.current = Math.max(minPitch, Math.min(maxPitch, pitch.current));
-      }
-    }
-
-    // -------------------- POSTURE: SITTING OR LYING DOWN --------------------
-    if (posture !== 'standing' && postureTarget) {
       body.setLinvel(new THREE.Vector3(0, 0, 0), true);
-
-      // Smooth camera transition to seated/lying target
-      const targetPos = new THREE.Vector3(
-        postureTarget.position[0],
-        postureTarget.position[1] + postureTarget.eyeHeight,
-        postureTarget.position[2]
-      );
-      camera.position.lerp(targetPos, delta * 6);
-      camera.rotation.set(pitch.current, yaw.current, 0, 'YXZ');
-
-      // Check exit inputs (debounce 400ms after entering)
-      if (now - enterPostureTime.current > 400) {
-        if (
-          controls.interact ||
-          controls.jump ||
-          controls.forward ||
-          controls.backward ||
-          controls.left ||
-          controls.right
-        ) {
-          if (posture === 'sitting') {
-            exitSitting();
-          } else {
-            exitLying();
-          }
-        }
+      if (postureTarget) {
+        currentEyeHeight.current = THREE.MathUtils.lerp(
+          currentEyeHeight.current,
+          postureTarget.eyeHeight,
+          delta * 6
+        );
+        const cameraY = pos.y + currentEyeHeight.current;
+        camera.position.set(pos.x, cameraY, pos.z);
+        camera.rotation.set(pitch.current, yaw.current, 0, 'YXZ');
       }
       return;
     }
 
-    // -------------------- STANDING & WALKING POSTURE --------------------
-    // Ground Detection via Rapier Raycast
-    const rayOrigin = { x: pos.x, y: pos.y + 0.1, z: pos.z };
-    const rayDir = { x: 0, y: -1, z: 0 };
-    const maxToi = 0.45;
-    const ray = new rapier.Ray(rayOrigin, rayDir);
-    const hit = world.castRay(ray, maxToi, true);
-    isGrounded.current = hit !== null || Math.abs(linvel.y) < 0.05;
-
-    // Calculate Movement Direction & Speed
-    let targetSpeed = 0;
-    const isCrouching = controls.crouch;
-    const isSprinting = controls.sprint && !isCrouching && (controls.forward || joystickVector.y > 0.3);
-
-    let inputForward = 0;
-    let inputStrafe = 0;
-
-    if (isStarted && !isPaused) {
-      if (controls.forward) inputForward += 1;
-      if (controls.backward) inputForward -= 1;
-      if (controls.right) inputStrafe += 1;
-      if (controls.left) inputStrafe -= 1;
-
-      inputForward += joystickVector.y;
-      inputStrafe += joystickVector.x;
-    }
-
-    const inputLength = Math.hypot(inputStrafe, inputForward);
-    const hasMovement = inputLength > 0.05;
-
-    if (hasMovement) {
-      if (isCrouching) {
-        targetSpeed = PLAYER_CONFIG.crouchSpeed;
-      } else if (isSprinting) {
-        targetSpeed = PLAYER_CONFIG.sprintSpeed;
-      } else {
-        targetSpeed = PLAYER_CONFIG.walkSpeed;
-      }
-    }
-
-    const normX = hasMovement ? inputStrafe / Math.max(1, inputLength) : 0;
-    const normZ = hasMovement ? inputForward / Math.max(1, inputLength) : 0;
-
-    const forwardX = -Math.sin(yaw.current);
-    const forwardZ = -Math.cos(yaw.current);
-    const rightX = Math.cos(yaw.current);
-    const rightZ = -Math.sin(yaw.current);
-
-    const worldDirX = forwardX * normZ + rightX * normX;
-    const worldDirZ = forwardZ * normZ + rightZ * normX;
-
-    const targetVx = worldDirX * targetSpeed;
-    const targetVz = worldDirZ * targetSpeed;
-
-    const accelRate = hasMovement ? PLAYER_CONFIG.acceleration : PLAYER_CONFIG.deceleration;
-    const smoothFactor = Math.min(1.0, delta * accelRate);
-    const newVx = THREE.MathUtils.lerp(linvel.x, targetVx, smoothFactor);
-    const newVz = THREE.MathUtils.lerp(linvel.z, targetVz, smoothFactor);
-
-    // Jump handling
-    let newVy = linvel.y;
-    if (controls.jump && isGrounded.current && isStarted && !isPaused) {
-      newVy = PLAYER_CONFIG.jumpImpulse;
-      isGrounded.current = false;
-    }
-
-    body.setLinvel(new THREE.Vector3(newVx, newVy, newVz), true);
-
-    // Dynamic Eye Height
-    const targetEyeHeight = isCrouching
+    // 6. Eye Height Transition (Crouching vs Standing)
+    const targetEyeHeight = controls.crouch
       ? PLAYER_CONFIG.crouchEyeHeight
       : PLAYER_CONFIG.standingEyeHeight;
     currentEyeHeight.current = THREE.MathUtils.lerp(
@@ -288,12 +192,69 @@ export const Player: React.FC = () => {
       delta * 10
     );
 
-    // Footstep Sound Synthesis & Head Bobbing
-    const horizontalSpeed = Math.hypot(linvel.x, linvel.z);
+    // 7. Calculate Movement Direction
+    let moveX = 0;
+    let moveZ = 0;
+
+    if (isMobile) {
+      moveX = joystickVector.x;
+      moveZ = -joystickVector.y;
+    } else {
+      if (controls.forward) moveZ -= 1;
+      if (controls.backward) moveZ += 1;
+      if (controls.left) moveX -= 1;
+      if (controls.right) moveX += 1;
+    }
+
+    const inputLen = Math.hypot(moveX, moveZ);
+    if (inputLen > 1) {
+      moveX /= inputLen;
+      moveZ /= inputLen;
+    }
+
+    // Transform local movement vector by camera yaw
+    const forwardVec = new THREE.Vector3(0, 0, -1).applyAxisAngle(
+      new THREE.Vector3(0, 1, 0),
+      yaw.current
+    );
+    const rightVec = new THREE.Vector3(1, 0, 0).applyAxisAngle(
+      new THREE.Vector3(0, 1, 0),
+      yaw.current
+    );
+
+    const worldMoveDir = new THREE.Vector3()
+      .addScaledVector(rightVec, moveX)
+      .addScaledVector(forwardVec, -moveZ);
+
+    const isSprinting = controls.sprint && !controls.crouch && inputLen > 0.1;
+    const targetSpeed = controls.crouch
+      ? PLAYER_CONFIG.crouchSpeed
+      : isSprinting
+      ? PLAYER_CONFIG.sprintSpeed
+      : PLAYER_CONFIG.walkSpeed;
+
+    const targetVelX = worldMoveDir.x * targetSpeed;
+    const targetVelZ = worldMoveDir.z * targetSpeed;
+
+    const accel = inputLen > 0.05 ? PLAYER_CONFIG.acceleration : PLAYER_CONFIG.deceleration;
+    const newVelX = THREE.MathUtils.lerp(linvel.x, targetVelX, delta * accel);
+    const newVelZ = THREE.MathUtils.lerp(linvel.z, targetVelZ, delta * accel);
+
+    // Handle Jump
+    let newVelY = linvel.y;
+    if (controls.jump && isGrounded.current && !controls.crouch) {
+      newVelY = PLAYER_CONFIG.jumpImpulse;
+      audioEngine.playSit();
+    }
+
+    body.setLinvel(new THREE.Vector3(newVelX, newVelY, newVelZ), true);
+
+    // 8. Head Bob & Footstep Audio Synthesis
+    const horizontalSpeed = Math.hypot(newVelX, newVelZ);
     let bobOffset = 0;
-    const isHeadBobActive = settings.headBobEnabled ?? true;
-    if (isGrounded.current && horizontalSpeed > 0.4) {
-      if (isHeadBobActive) {
+
+    if (horizontalSpeed > 0.4 && isGrounded.current) {
+      if (settings.headBobEnabled) {
         const bobFreq = isSprinting
           ? PLAYER_CONFIG.headBobFrequency * 1.3
           : PLAYER_CONFIG.headBobFrequency;
@@ -305,28 +266,19 @@ export const Player: React.FC = () => {
         bobOffset = Math.sin(headBobTimer.current) * bobAmp;
       }
 
-      // Surface-sensitive footsteps
       stepDistanceAccum.current += horizontalSpeed * delta;
       const stepInterval = isSprinting ? 0.45 : 0.58;
       if (stepDistanceAccum.current >= stepInterval) {
         stepDistanceAccum.current = 0;
 
-        // Detect surface type based on position
         let surface: 'stone' | 'wood' | 'carpet' = 'stone';
-        // Living room rug: X: 1.9 +- 2.8, Z: -1.2 +- 2.0
         if (Math.abs(pos.x - 1.9) < 2.8 && Math.abs(pos.z - (-1.2)) < 2.0) {
           surface = 'carpet';
-        }
-        // Master bedroom rug: X: -10.5 +- 2.5, Z: -3.0 +- 2.2
-        else if (Math.abs(pos.x - (-10.5)) < 2.5 && Math.abs(pos.z - (-3.0)) < 2.2) {
+        } else if (Math.abs(pos.x - (-10.5)) < 2.5 && Math.abs(pos.z - (-3.0)) < 2.2) {
           surface = 'carpet';
-        }
-        // Guest bedroom: X: 2.5 to 9.5, Z: 2.0 to 6.5
-        else if (pos.x > 2.5 && pos.x < 9.5 && pos.z > 2.0 && pos.z < 6.5) {
+        } else if (pos.x > 2.5 && pos.x < 9.5 && pos.z > 2.0 && pos.z < 6.5) {
           surface = 'wood';
-        }
-        // Master suite wood areas: X: -14.5 to -6.5, Z: -6.0 to 0.0
-        else if (pos.x > -14.5 && pos.x < -6.5 && pos.z > -6.0 && pos.z < 0.0) {
+        } else if (pos.x > -14.5 && pos.x < -6.5 && pos.z > -6.0 && pos.z < 0.0) {
           surface = 'wood';
         }
 
@@ -336,14 +288,14 @@ export const Player: React.FC = () => {
       bobOffset = THREE.MathUtils.lerp(0, 0, delta * 8);
     }
 
-    // Sync Camera
+    // 9. Sync Camera Position & Orientation
     const cameraY = pos.y + currentEyeHeight.current + bobOffset;
     camera.position.set(pos.x, cameraY, pos.z);
     camera.rotation.set(pitch.current, yaw.current, 0, 'YXZ');
 
-    // Sprint FOV Kick
+    // 10. Sprint FOV Kick
     if (camera instanceof THREE.PerspectiveCamera) {
-      const targetFov = isSprinting ? PLAYER_CONFIG.sprintFov : PLAYER_CONFIG.baseFov;
+      const targetFov = isSprinting ? PLAYER_CONFIG.sprintFov : settings.fov;
       if (Math.abs(camera.fov - targetFov) > 0.05) {
         camera.fov = THREE.MathUtils.lerp(
           camera.fov,
@@ -352,6 +304,40 @@ export const Player: React.FC = () => {
         );
         camera.updateProjectionMatrix();
       }
+    }
+
+    // 11. Throttled Room Determination and Minimap Position Sync
+    const nowMs = performance.now();
+    if (nowMs - lastRoomCheck.current > 400) {
+      lastRoomCheck.current = nowMs;
+
+      // Identify active room based on coordinates
+      const rooms = ARCHITECTURE_CONFIG.rooms;
+      for (const room of Object.values(rooms)) {
+        if (
+          pos.x >= room.bounds.minX &&
+          pos.x <= room.bounds.maxX &&
+          pos.z >= room.bounds.minZ &&
+          pos.z <= room.bounds.maxZ
+        ) {
+          setCurrentRoomId(room.id);
+          break;
+        }
+      }
+
+      // Proximity check for terrace jacuzzi
+      const jb = ARCHITECTURE_CONFIG.jacuzzi.bounds;
+      const nearJacuzzi =
+        pos.x >= jb.minX - 1.5 &&
+        pos.x <= jb.maxX + 1.5 &&
+        pos.z >= jb.minZ - 1.5 &&
+        pos.z <= jb.maxZ + 1.5;
+      setIsNearJacuzzi(nearJacuzzi);
+    }
+
+    if (nowMs - lastPosSync.current > 100) {
+      lastPosSync.current = nowMs;
+      setPlayerPosition({ x: pos.x, z: pos.z, yaw: yaw.current });
     }
   });
 
