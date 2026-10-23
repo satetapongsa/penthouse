@@ -27,6 +27,13 @@ Built with **Next.js App Router**, **TypeScript**, **Tailwind CSS**, and **Three
   - **Foyer**: Honed Calacatta marble console table with fluted oak base, 1.2m round brass bevel wall mirror, fluted shoe cabinet credenza with potted plant, and modernist bronze ribbon sculpture on a fluted travertine pedestal.
   - **Living Room**: Large ivory bouclé L-shaped sectional sofa with scatter pillows and cashmere blanket, nested travertine and brass coffee table with art monographs and floral vase, two curved bouclé accent armchairs, 85" OLED TV feature wall with floating media console and glowing linear fireplace, white lacquer grand piano, plush textured area rug, 5-tier brass & oak bookshelves with detailed books and ceramic vessels, indoor potted tree, and arched brass floor lamp.
   - **Kitchen & Dining**: 3.6m Calacatta Gold waterfall marble island with undermount sink, brass gooseneck faucet, flush induction cooktop, 4 bouclé bar stools, trio of brass pendant globes, full-height pale oak cabinetry with built-in oven and fridge, grand 8-seater travertine dining table with full luxury place settings (gold chargers, porcelain dinnerware, linen napkins, crystal stemware, cutlery), centerpiece fruit bowl, and backlit glass-front wine display wall.
+- **Private Suites & Terrace Furnishings (Phase 4)**:
+  - **Master Bedroom Suite**: King bed with fluted bouclé headboard, brass border, 6 pillows, cashmere throw, two fluted oak nightstands with travertine table lamps, curved reading armchair with floor lamp, vanity desk with illuminated arched mirror and bouclé stool, floor-to-ceiling sheer architectural drapes framing the skyline windows, plush area rug, and wall art.
+  - **Walk-in Wardrobe**: Boutique open cabinetry with integrated LED strip lighting, brass hanging rails with tailored suits, coats, and dresses, 5-tier backlit angled shoe shelves with luxury footwear, central dressing island with marble top and smoked jewelry glass insert, and full-length backlit dressing mirror.
+  - **Master Bath & Spa**: Monolithic freestanding mineral resin soaking tub with floor-mounted brass filler tap, walk-in rain shower with frameless glass panel, ceiling-mounted brass rain head and marble shampoo niche, double vanity with dual undermount basins, brass faucets, dual backlit arched mirrors, rolled waffle towels, white orchid, wall-hung toilet, and high frosted privacy window.
+  - **Guest Bedroom Suite**: Double bed with fluted headboard, bedding, terracotta throw, nightstands with lamps, work desk with laptop, lamp, modernist desk chair, built-in wardrobe with brass handles, and gallery wall art.
+  - **Guest Powder Room**: Monolithic fluted stone basin vanity, wall-mounted brass faucet, tall backlit pill mirror, luxury reed fragrance diffuser, and wall-hung minimalist toilet.
+  - **Private Sky Terrace**: Weatherproof outdoor teak & linen sectional lounge, low travertine coffee table with carafe and glasses, large travertine box planters with Mediterranean greenery, ambient evening lanterns, and an **animated procedural Jacuzzi pool water surface** with dynamic ripple shaders and submerged aquamarine lighting.
 - **Interactive Door System**:
   - Reusable `<Door>` component supporting hinged swing doors and sliding glass doors.
   - Rapier kinematic colliders that update seamlessly when doors open or close.
@@ -135,8 +142,20 @@ vercel
 │   │   │   └── FoyerFurniture.tsx # Console table, brass mirror, shoe cabinet, art piece
 │   │   ├── living/
 │   │   │   └── LivingFurniture.tsx# Sectional sofa, coffee table, armchairs, TV wall, piano
-│   │   └── kitchen/
-│   │       └── KitchenDiningFurniture.tsx # Marble island, bar stools, dining set, wine wall
+│   │   ├── kitchen/
+│   │   │   └── KitchenDiningFurniture.tsx # Marble island, bar stools, dining set, wine wall
+│   │   ├── bedroom/
+│   │   │   └── MasterBedroomFurniture.tsx # King bed, nightstands, reading chair, vanity
+│   │   ├── wardrobe/
+│   │   │   └── WardrobeFurniture.tsx      # Open boutique cabinetry, rails, shoe shelves
+│   │   ├── bathroom/
+│   │   │   └── MasterBathroomFurniture.tsx# Freestanding tub, rain shower, double vanity
+│   │   ├── guest/
+│   │   │   └── GuestBedroomFurniture.tsx  # Double bed, nightstands, desk, wardrobe
+│   │   ├── powder/
+│   │   │   └── PowderRoomFurniture.tsx    # Monolithic stone basin, toilet, mirror
+│   │   └── terrace/
+│   │       └── TerraceFurniture.tsx       # Outdoor lounge, planters, animated Jacuzzi water
 │   ├── interaction/
 │   │   └── InteractionManager.tsx # Raycaster interaction detection system
 │   ├── intro/

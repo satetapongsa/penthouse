@@ -9,6 +9,12 @@ import { Door } from '@/components/doors/Door';
 import { FoyerFurniture } from '@/components/furniture/foyer/FoyerFurniture';
 import { LivingFurniture } from '@/components/furniture/living/LivingFurniture';
 import { KitchenDiningFurniture } from '@/components/furniture/kitchen/KitchenDiningFurniture';
+import { MasterBedroomFurniture } from '@/components/furniture/bedroom/MasterBedroomFurniture';
+import { WardrobeFurniture } from '@/components/furniture/wardrobe/WardrobeFurniture';
+import { MasterBathroomFurniture } from '@/components/furniture/bathroom/MasterBathroomFurniture';
+import { GuestBedroomFurniture } from '@/components/furniture/guest/GuestBedroomFurniture';
+import { PowderRoomFurniture } from '@/components/furniture/powder/PowderRoomFurniture';
+import { TerraceFurniture } from '@/components/furniture/terrace/TerraceFurniture';
 
 interface WallSegmentProps {
   position: [number, number, number];
@@ -387,6 +393,14 @@ export const PenthouseShell: React.FC = () => {
       <FoyerFurniture />
       <LivingFurniture />
       <KitchenDiningFurniture />
+
+      {/* -------------------- 5C. PRIVATE SUITES & TERRACE FURNITURE -------------------- */}
+      <MasterBedroomFurniture />
+      <WardrobeFurniture />
+      <MasterBathroomFurniture />
+      <GuestBedroomFurniture />
+      <PowderRoomFurniture />
+      <TerraceFurniture />
 
       {/* -------------------- 6. PRIVATE SKY TERRACE & JACUZZI BASIN -------------------- */}
       {/* Glass Railing (Height 1.2m) around Terrace perimeter */}
